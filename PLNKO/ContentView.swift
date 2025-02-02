@@ -1,9 +1,4 @@
-//
-//  ContentView.swift
-//  PLNKO
-//
-//  Created by Александр Андреев on 01.02.2025.
-//
+
 
 import SwiftUI
 

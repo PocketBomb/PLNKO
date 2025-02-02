@@ -1,17 +1,23 @@
-//
-//  PLNKOApp.swift
-//  PLNKO
-//
-//  Created by Александр Андреев on 01.02.2025.
-//
 
 import SwiftUI
 
 @main
 struct PLNKOApp: App {
+    
+    @AppStorage("isFirst") private var isFirst: Bool = true
+//    @State private var isFirst: Bool = true
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if isFirst {
+                WelcomeView(onMain: {
+                    isFirst = false
+                })
+                    .edgesIgnoringSafeArea(.all)
+            } else {
+                GumGalleryView()
+                    .edgesIgnoringSafeArea(.all)
+            }
         }
     }
 }

@@ -15,7 +15,7 @@ struct PLNKOApp: App {
                 })
                     .edgesIgnoringSafeArea(.all)
             } else {
-                GumGalleryView()
+                GameView()
                     .edgesIgnoringSafeArea(.all)
             }
         }

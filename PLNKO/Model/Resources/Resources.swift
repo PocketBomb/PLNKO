@@ -9,6 +9,18 @@ enum Resources {
         static let jomhuria = "Jomhuria-Regular"
     }
     
+    enum Game {
+        enum Views {
+            static let gameBackground = "gameBackground"
+            static let gameSceneBack = "gameSceneBack"
+        }
+        
+        enum Buttons {
+            static let pauseButton = "pauseButton"
+            static let backButton = "backButton"
+        }
+    }
+    
     //MARK: - MainView
     enum Main {
         
@@ -65,6 +77,33 @@ enum Resources {
         
         enum Buttons {
             static let backButton = "backButton"
+            static let galleryLeftButton = "galleryLeftButton"
+            static let galleryRightButton = "galleryRightButton"
+        }
+    }
+    
+    enum Info {
+        enum View {
+            static let infoLabel = "infoLabel"
+        }
+        
+        enum Images {
+            static let info1 = "info1"
+            static let info2 = "info2"
+            static let info3 = "info3"
+        }
+        
+        enum Text {
+            static let text1 = "Drag and place blocks\nonto the grid."
+            static let text2 = "Blocks disappear only when\nthey touch another block\nof the same color."
+            static let text3 = "The game ends when there’s\nno space left to place new blocks\nor the timer runs out."
+        }
+    }
+    
+    enum Achievements {
+        enum View {
+            static let achievementsBackground = "achievementsBackground"
+            static let achievmentsLabel = "achievmentsLabel"
         }
     }
 }

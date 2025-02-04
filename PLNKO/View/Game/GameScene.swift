@@ -140,84 +140,79 @@ class GameScene: SKScene {
     private func checkAndRemoveMatches() {
         var visited = Set<String>() // Чтобы не проверять одну и ту же клетку дважды
         var groups: [[(Int, Int, String)]] = [] // Группы элементов, которые должны удалиться
-
+        
         for row in 0..<rows {
             for col in 0..<columns {
                 guard !elements[row][col].isEmpty else { continue }
-
+                
                 let elementName = elements[row][col][0].0
                 let elementColor = getColor(from: elementName)
-
+                
                 let key = "\(row)-\(col)-\(elementName)"
                 if visited.contains(key) { continue }
-
+                
                 // Найти всю связанную группу
                 var toCheck = [(row, col, elementName)]
                 var connectedGroup: [(Int, Int, String)] = []
-
+                
                 while !toCheck.isEmpty {
                     let (curRow, curCol, curElement) = toCheck.removeLast()
                     let curKey = "\(curRow)-\(curCol)-\(curElement)"
-
+                    
                     if visited.contains(curKey) { continue }
                     visited.insert(curKey)
-
+                    
                     connectedGroup.append((curRow, curCol, curElement))
-
+                    
                     let curType = getType(from: curElement)
                     let curOffset = elements[curRow][curCol][0].1
-
+                    
                     for (dRow, dCol) in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
                         let neighborRow = curRow + dRow
                         let neighborCol = curCol + dCol
-
+                        
                         if neighborRow < 0 || neighborRow >= rows || neighborCol < 0 || neighborCol >= columns {
                             continue
                         }
-
+                        
                         guard !elements[neighborRow][neighborCol].isEmpty else { continue }
-
+                        
                         for neighbor in elements[neighborRow][neighborCol] {
                             let neighborName = neighbor.0
                             let neighborType = getType(from: neighborName)
                             let neighborColor = getColor(from: neighborName)
                             let neighborOffset = neighbor.1
-
+                            
                             let neighborKey = "\(neighborRow)-\(neighborCol)-\(neighborName)"
-                        
+                            
                             if neighborColor == elementColor, !visited.contains(neighborKey),
-                                areElementsTouching(
-                                    currentType: curType,
-                                    neighborType: neighborType,
-                                    direction: (dRow, dCol),
-                                    currentOffset: curOffset,
-                                    neighborOffset: neighborOffset
-                                ) {
+                               areElementsTouching(
+                                currentType: curType,
+                                neighborType: neighborType,
+                                direction: (dRow, dCol),
+                                currentOffset: curOffset,
+                                neighborOffset: neighborOffset
+                               ) {
                                 toCheck.append((neighborRow, neighborCol, neighborName))
                             }
                         }
                     }
                 }
-
+                
                 if connectedGroup.count > 1 {
                     groups.append(connectedGroup)
                 }
             }
         }
-//        print(groups)
-        // Удаляем только связанные группы
-//        print(elementNodes)
         for group in groups {
             for (row, col, elementName) in group {
                 print(elementName)
                 if let index = elements[row][col].firstIndex(where: { $0.0 == elementName }) {
                     elements[row][col].remove(at: index)
                 }
-//                print(elementNodes)
-                print(elementNodes[row][col])
                 if elementNodes[row][col].count == 1 {
                     let node = elementNodes[row][col].first!
-                        node?.run(SKAction.fadeOut(withDuration: 0.2)) {
+                    node?.run(SKAction.fadeOut(withDuration: 0.2)) {
                         node?.removeFromParent()
                         let _ = self.elementNodes[row][col].removeFirst()!
                     }
@@ -228,8 +223,50 @@ class GameScene: SKScene {
                         self.elementNodes[row][col].removeAll(where: { $0?.name == elementName })
                     }
                 }
-
+                
             }
+        }
+        
+        changeHalfToSquare()
+    }
+    
+    func changeHalfToSquare()  {
+        let startX = (self.size.width - (249)) / 2
+        let startY = size.height - 60
+        DispatchQueue.main.asyncAfter(deadline: .now()+0.3) {
+            for row in 0..<self.rows {
+                for col in 0..<self.columns {
+                    let xPos = startX + CGFloat(col) * (self.blockSize + self.spacing)
+                    let yPos = startY - CGFloat(row) * (self.blockSize + self.spacing)
+                    print(self.elementNodes[row][col])
+                    if self.elementNodes[row][col].count == 1 {
+    //                    print(elementNodes[row][col])
+                        guard let node = self.elementNodes[row][col].first! else {return}
+                        if self.isHalfBlock(node.name ?? "") {
+                            node.run(SKAction.fadeOut(withDuration: 0.2)) {
+                                node.removeFromParent()
+                                self.elementNodes[row][col].removeAll(where: { $0?.name == node.name })
+                            }
+                            let color = self.getColor(from: node.name!)
+                            let element = SKSpriteNode(imageNamed: color+"Square")
+                            element.position = CGPoint(x: xPos, y: yPos)
+                            element.name = color+"Square"
+                            self.addChild(element)
+                            self.elementNodes[row][col].append(element)
+                        }
+                    }
+                }
+            }
+        }
+    }
+        
+    func isHalfBlock(_ name: String) -> Bool {
+        if name.contains("HorizontalHalf") {
+            return true
+        } else if name.contains("VerticalHalf") {
+            return true
+        } else {
+            return false
         }
     }
 
@@ -294,11 +331,6 @@ class GameScene: SKScene {
 
         // Если текущий элемент - квадрат и сосед - горизонтальная половинка
         if currentType.contains("Square") && neighborType.contains("HorizontalHalf") {
-//            if direction.1 == 1 { // Сосед справа
-//                return neighborOffset.x > 0
-//            } else if direction.1 == -1 { // Сосед слева
-//                return neighborOffset.x < 0
-//            }
             
             if direction == (-1, 0) { //сверху
                 return neighborOffset.y < 0

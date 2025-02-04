@@ -10,7 +10,7 @@ class GameScene: SKScene {
         [[], [], [("orangeVerticalHalf", CGPoint(x: -19, y: 0)), ("purpleVerticalHalf", CGPoint(x: 19, y: 0))], [("blueSquare", CGPoint(x: 0, y: 0))]]
     ]
 
-    var elementNodes: [[SKSpriteNode?]] = Array(repeating: Array(repeating: nil, count: 4), count: 4)
+    var elementNodes: [[[SKSpriteNode?]]] = Array(repeating: Array(repeating: [], count: 4), count: 4)
 
     var startBlockNodes: [SKSpriteNode] = []
     var startSquares: [SKSpriteNode] = []
@@ -59,8 +59,10 @@ class GameScene: SKScene {
                 for (imageName, offset) in elements[row][col] {
                     let element = SKSpriteNode(imageNamed: imageName)
                     element.position = CGPoint(x: xPos + offset.x, y: yPos + offset.y)
+                    element.name = imageName
                     addChild(element)
-                    elementNodes[row][col] = element
+//                    elementNodes[row][col] = element
+                    elementNodes[row][col].append(element)
                 }
             }
         }
@@ -121,7 +123,7 @@ class GameScene: SKScene {
                     elementNode.position = CGPoint(x: xPos, y: yPos)
                     addChild(elementNode)
 
-                    elementNodes[row][col] = elementNode
+                    elementNodes[row][col].append(elementNode)
 
                     startSquares[index].setScale(1.0)
                     tappedSquareIndex = nil
@@ -204,7 +206,7 @@ class GameScene: SKScene {
         }
 //        print(groups)
         // Удаляем только связанные группы
-        print(elementNodes)
+//        print(elementNodes)
         for group in groups {
             for (row, col, elementName) in group {
                 print(elementName)
@@ -212,16 +214,23 @@ class GameScene: SKScene {
                     elements[row][col].remove(at: index)
                 }
 //                print(elementNodes)
-                if let node = elementNodes[row][col]{
-                    print(node)
-                    node.run(SKAction.fadeOut(withDuration: 0.2)) {
-                        node.removeFromParent()
-                        self.elementNodes[row][col] = nil
+                print(elementNodes[row][col])
+                if elementNodes[row][col].count == 1 {
+                    let node = elementNodes[row][col].first!
+                        node?.run(SKAction.fadeOut(withDuration: 0.2)) {
+                        node?.removeFromParent()
+                        let _ = self.elementNodes[row][col].removeFirst()!
+                    }
+                } else if let node = elementNodes[row][col].first(where: { $0?.name == elementName }) {
+                    
+                    node?.run(SKAction.fadeOut(withDuration: 0.2)) {
+                        node?.removeFromParent()
+                        self.elementNodes[row][col].removeAll(where: { $0?.name == elementName })
                     }
                 }
+
             }
         }
-//        print(elements)
     }
 
 
@@ -269,23 +278,6 @@ class GameScene: SKScene {
             return true
         }
 
-//        // Если оба элемента вертикальные половинки
-//        if currentType.contains("VerticalHalf") && neighborType.contains("VerticalHalf") {
-//            if direction.0 == 1 { // Сосед снизу
-//                return currentOffset.y < 0 && neighborOffset.y > 0
-//            } else if direction.0 == -1 { // Сосед сверху
-//                return currentOffset.y > 0 && neighborOffset.y < 0
-//            }
-//        }
-
-//        // Если текущий элемент - вертикальная половинка и сосед - квадрат
-//        if currentType.contains("VerticalHalf") && neighborType.contains("Square") {
-//            if direction.0 == 1 { // Сосед снизу
-//                return currentOffset.y < 0
-//            } else if direction.0 == -1 { // Сосед сверху
-//                return currentOffset.y > 0
-//            }
-//        }
 
         // Если текущий элемент - квадрат и сосед - вертикальная половинка
         if currentType.contains("Square") && neighborType.contains("VerticalHalf") {
@@ -302,17 +294,23 @@ class GameScene: SKScene {
 
         // Если текущий элемент - квадрат и сосед - горизонтальная половинка
         if currentType.contains("Square") && neighborType.contains("HorizontalHalf") {
-            if direction.1 == 1 { // Сосед справа
-                return neighborOffset.x > 0
-            } else if direction.1 == -1 { // Сосед слева
-                return neighborOffset.x < 0
+//            if direction.1 == 1 { // Сосед справа
+//                return neighborOffset.x > 0
+//            } else if direction.1 == -1 { // Сосед слева
+//                return neighborOffset.x < 0
+//            }
+            
+            if direction == (-1, 0) { //сверху
+                return neighborOffset.y < 0
+            } else if direction == (1, 0) { //внизу
+                return neighborOffset.y > 0
+            } else if direction == (0, -1) { //слева
+                return true
+            } else { //справа
+                return true
             }
         }
 
-//        // Если оба элемента - четвертинки, они должны совпадать по расположению
-//        if currentType.contains("Quarter") && neighborType.contains("Quarter") {
-//            return currentOffset == neighborOffset
-//        }
 
         return false
     }

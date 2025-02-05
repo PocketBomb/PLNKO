@@ -5,19 +5,18 @@ class GameLogic {
     func placeElement(on gameBoard: GameBoard, at position: (Int, Int)) {
         gameBoard.placeElement(at: position)
     }
-
+    
     func checkAndRemoveMatches(on gameBoard: GameBoard) {
         var toRemove: [(Int, Int, String)] = []
+        var visitedCells = Set<String>() // Множество посещенных клеток
 
         for row in 0..<gameBoard.elements.count {
             for col in 0..<gameBoard.elements[row].count {
                 guard !gameBoard.elements[row][col].isEmpty else { continue }
 
-                let currentElement = gameBoard.elements[row][col][0]
-                let currentName = currentElement.0
-                let currentType = getType(from: currentName)
-                let currentColor = getColor(from: currentName)
-                let currentOffset = currentElement.1
+                let currentElementName = gameBoard.elements[row][col][0].0
+                let currentElementType = getType(from: currentElementName)
+                let currentElementColor = getColor(from: currentElementName)
 
                 for (dRow, dCol) in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
                     let neighborRow = row + dRow
@@ -35,18 +34,27 @@ class GameLogic {
                         let neighborType = getType(from: neighborName)
                         let neighborColor = getColor(from: neighborName)
                         let neighborOffset = neighbor.1
-                        if currentColor == neighborColor,
+                        print(neighborName, currentElementName)
+                        if currentElementColor == neighborColor,
+                           
                            areElementsTouching(
-                               currentType: currentType,
+                               currentType: currentElementType,
                                neighborType: neighborType,
                                direction: (dRow, dCol),
-                               currentOffset: currentOffset,
+                               currentOffset: CGPoint.zero,
                                neighborOffset: neighborOffset
                            ) {
-                            
-                            toRemove.append((row, col, currentName))
-                            toRemove.append((neighborRow, neighborCol, neighborName))
-                            print(toRemove)
+                            let cellKey = "\(row)-\(col)-\(currentElementName)"
+                            if !visitedCells.contains(cellKey) {
+                                toRemove.append((row, col, currentElementName))
+                                visitedCells.insert(cellKey)
+                            }
+
+                            let neighborCellKey = "\(neighborRow)-\(neighborCol)-\(neighborName)"
+                            if !visitedCells.contains(neighborCellKey) {
+                                toRemove.append((neighborRow, neighborCol, neighborName))
+                                visitedCells.insert(neighborCellKey)
+                            }
                         }
                     }
                 }
@@ -55,8 +63,10 @@ class GameLogic {
 
         gameBoard.removeElements(at: toRemove)
     }
+    
+   
 
-    private func getType(from name: String) -> String {
+     func getType(from name: String) -> String {
         if name.contains("Square") {
             return "Square"
         } else if name.contains("HorizontalHalf") {
@@ -93,35 +103,54 @@ class GameLogic {
         }
     }
 
-    private func areElementsTouching(
+    func areElementsTouching(
         currentType: String,
         neighborType: String,
         direction: (Int, Int),
         currentOffset: CGPoint,
         neighborOffset: CGPoint
     ) -> Bool {
-        
+        print(currentType, neighborType, direction, currentOffset, neighborOffset)
+
         if currentType.contains("Square") && neighborType.contains("Square") {
-            return true
+            return true // Квадрат всегда соприкасается с другим квадратом
         }
 
         if currentType.contains("Square") && neighborType.contains("VerticalHalf") {
             if direction == (-1, 0) || direction == (1, 0) {
-                return true
+                return true // Вертикальные половинки соприкасаются с квадратом сверху/снизу
             } else if direction == (0, -1) {
-                return neighborOffset.x > 0
+                return neighborOffset.x > 0 // Слева — сосед должен быть справа
             } else {
-                return neighborOffset.x < 0
+                return neighborOffset.x < 0 // Справа — сосед должен быть слева
             }
         }
 
         if currentType.contains("Square") && neighborType.contains("HorizontalHalf") {
             if direction == (-1, 0) {
-                return neighborOffset.y < 0
+                return neighborOffset.y < 0 // Сверху — сосед должен быть снизу
             } else if direction == (1, 0) {
-                return neighborOffset.y > 0
+                return neighborOffset.y > 0 // Снизу — сосед должен быть сверху
             } else {
-                return true
+                return true // По горизонтали — всегда соприкасаются
+            }
+        }
+
+        if currentType.contains("HorizontalHalf") && neighborType.contains("HorizontalHalf") {
+            // Проверяем, что обе половинки находятся на одной стороне клетки
+            if direction == (0, 1) || direction == (0, -1) {
+                return currentOffset.y == neighborOffset.y // Они должны быть на одном уровне
+            } else if direction == (-1, 0) {
+                return currentOffset.y > neighborOffset.y
+            } else if direction == (1, 0) {
+                return currentOffset.y < neighborOffset.y
+            }
+        }
+
+        if currentType.contains("VerticalHalf") && neighborType.contains("VerticalHalf") {
+            // Проверяем, что обе половинки находятся на одной стороне клетки
+            if direction == (-1, 0) || direction == (1, 0) {
+                return currentOffset.x == neighborOffset.x // Они должны быть на одном уровне
             }
         }
 

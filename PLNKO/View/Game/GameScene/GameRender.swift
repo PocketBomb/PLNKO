@@ -94,11 +94,6 @@ class GameRenderer {
                     let yPos = startY - CGFloat(row) * (blockSize + spacing)
                     element.position = CGPoint(x: xPos + offset.x, y: yPos + offset.y)
                     
-                    if name == "purpleSquare" {
-                        print(element)
-                    } else {
-                        print(element.position)
-                    }
                     // Добавляем элемент на сцену
                     scene.addChild(element)
 
@@ -122,6 +117,7 @@ class GameRenderer {
     }
     
     func changeHalfToSquare(scene: SKScene, gameBoard: GameBoard) -> Bool {
+        var flag = false
         for row in 0..<gameBoard.elements.count {
             for col in 0..<gameBoard.elements[row].count {
                 if gameBoard.elementNodes[row][col].count == 1 {
@@ -137,11 +133,11 @@ class GameRenderer {
                         element.name = color+"Square"
                         gameBoard.elementNodes[row][col].append(element)
                         gameBoard.elements[row][col].append((color+"Square", CGPoint(x: 0, y: 0)))
-                        return true
+                        flag = true
                     }
                 }
             }
         }
-        return false
+        return flag
     }
 }

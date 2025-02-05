@@ -16,41 +16,38 @@ class GameBoard {
     var elementNodes: [[[SKSpriteNode?]]] = Array(repeating: Array(repeating: [], count: 4), count: 4)
     var startBlockNodes: [SKSpriteNode] = []
     var startSquares: [SKSpriteNode] = []
+    var startSquares1: [[SKSpriteNode]] = []
     var tappedSquareIndex: Int? = nil
     var selectedElement: (String, CGPoint)? = nil
+    var selectedElement1: [(String, CGPoint)]? = nil
     let startImages = ["whiteSquare", "orangeSquare"]
     
-    let startImages1 = [[[("redHorizontalHalf", CGPoint(x: 0, y: 19)), ("orangeHorizontalHalf", CGPoint(x: 0, y: -19))], [("whiteSquare", CGPoint(x: 0, y: 0))]]]
+    let startImages1 = [[("orangeHorizontalHalf", CGPoint(x: 0, y: 19)), ("redHorizontalHalf", CGPoint(x: 0, y: -19))], [("whiteSquare", CGPoint(x: 0, y: 0))]]
 
     func selectElement(at index: Int) {
         if tappedSquareIndex == index {
-            startSquares[index].setScale(1.0)
-            tappedSquareIndex = nil
-            selectedElement = nil
+            deselectAll()
         } else {
             tappedSquareIndex = index
-            selectedElement = (startImages[index], CGPoint(x: 0, y: 0))
-            startSquares[index].setScale(1.2)
-            if index == 1 {
-                startSquares[0].setScale(1.0)
-            } else {
-                startSquares[1].setScale(1.0)
-            }
+            selectedElement1 = startImages1[index]
+            startSquares1.forEach { $0.forEach{$0.setScale(1.0)} }
+            startSquares1[index].forEach{$0.setScale(1.2)}
         }
     }
     
     func deselectAll() {
         tappedSquareIndex = nil
         selectedElement = nil
-        startSquares[0].setScale(1.0)
-        startSquares[1].setScale(1.0)
+        startSquares1.forEach { $0.forEach{$0.setScale(1.0)} }
     }
-
+    
     func placeElement(at position: (Int, Int)) {
-        if let (name, offset) = selectedElement {
+        guard let elementsToAdd = selectedElement1 else { return } 
+        for (name, offset) in elementsToAdd {
             elements[position.0][position.1].append((name, offset))
-            selectedElement = nil
         }
+
+        deselectAll()
     }
 
     func removeElements(at positions: [(Int, Int, String)]) {

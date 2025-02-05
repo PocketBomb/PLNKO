@@ -2,7 +2,6 @@
 import SwiftUI
 import SpriteKit
 
-
 class GameScene: SKScene {
     private var gameBoard: GameBoard
     private var gameRenderer: GameRenderer
@@ -28,9 +27,9 @@ class GameScene: SKScene {
         background.zPosition = -1
         addChild(background)
     }
-
+    
     private func setupStartBlocks() {
-        let startBlockSize: CGFloat = 90
+        let startBlockSize: CGFloat = 75
         let yOffset: CGFloat = startBlockSize / 2
         let startXPositions = [startBlockSize / 2, size.width - startBlockSize / 2]
 
@@ -40,12 +39,18 @@ class GameScene: SKScene {
             block.position = CGPoint(x: startX, y: yOffset)
             addChild(block)
 
-            let square = SKSpriteNode(imageNamed: gameBoard.startImages[index])
-            square.position = block.position
-            addChild(square)
-
             gameBoard.startBlockNodes.append(block)
-            gameBoard.startSquares.append(square)
+            var squareGroup = [SKSpriteNode]() // Группа элементов для текущего стартового блока
+
+            for (name, offset) in gameBoard.startImages1[index] { // Используем startImages1
+                let square = SKSpriteNode(imageNamed: name)
+                square.position = CGPoint(x: block.position.x + offset.x, y: block.position.y + offset.y)
+                square.name = name
+                addChild(square)
+                squareGroup.append(square)
+            }
+
+            gameBoard.startSquares1.append(squareGroup)
         }
     }
 

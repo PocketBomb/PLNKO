@@ -80,27 +80,56 @@ class GameScene: SKScene {
             return // Останавливаем цикл, если достигнут лимит итераций
         }
 
-        // Проверяем матчи и удаляем элементы
-        gameLogic.checkAndRemoveMatches(on: gameBoard)
-        
-        // Обновляем игровое поле
-        gameRenderer.updateGameBoard(on: self, gameBoard: gameBoard)
+        let dispatchGroup = DispatchGroup() // Создаем группу для координации задач
 
-        // Преобразуем половинки в квадраты
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        // Шаг 1: Проверяем матчи и удаляем элементы
+        gameLogic.checkAndRemoveMatches(on: gameBoard)
+
+        // Шаг 2: Обновляем игровое поле
+        dispatchGroup.enter() // Входим в группу
+        DispatchQueue.main.async {
+            self.gameRenderer.updateGameBoard(on: self, gameBoard: self.gameBoard)
+            dispatchGroup.leave() // Выходим из группы после обновления
+        }
+
+        // Шаг 3: Преобразуем половинки в квадраты
+        dispatchGroup.notify(queue: .main) { // Ждем завершения предыдущего шага
+            dispatchGroup.enter()
             if self.gameRenderer.changeHalfToSquare(scene: self, gameBoard: self.gameBoard) {
-                self.gameRenderer.updateGameBoard(on: self, gameBoard: self.gameBoard)
-            }
-            if self.gameRenderer.changeQuarterToHalf(gameBoard: self.gameBoard) {
-                self.gameRenderer.updateGameBoard(on: self, gameBoard: self.gameBoard)
-            }
-            
-            // Проверяем, остались ли матчи
-            if self.gameLogic.hasMatches(on: self.gameBoard) {
-                // Если матчи есть, продолжаем цикл
+//                dispatchGroup.enter() // Входим в группу
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    self.gameRenderer.updateGameBoard(on: self, gameBoard: self.gameBoard)
+                    dispatchGroup.leave() // Выходим из группы после обновления
+                }
+            } else {
+                dispatchGroup.leave() // Если нет изменений, сразу выходим
+            }
+        }
+
+        // Шаг 4: Преобразуем четвертинки в половинки
+        dispatchGroup.notify(queue: .main) { // Ждем завершения предыдущего шага
+            dispatchGroup.enter()
+            if self.gameRenderer.changeQuarterToHalf(gameBoard: self.gameBoard) {
+//                dispatchGroup.enter() // Входим в группу
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    self.gameRenderer.updateGameBoard(on: self, gameBoard: self.gameBoard)
+                    dispatchGroup.leave() // Выходим из группы после обновления
+                }
+            } else {
+                dispatchGroup.leave() // Если нет изменений, сразу выходим
+            }
+        }
+
+        // Шаг 5: Проверяем, остались ли матчи
+        dispatchGroup.notify(queue: .main) { // Ждем завершения всех предыдущих шагов
+            if self.gameLogic.hasMatches(on: self.gameBoard) {
+                // Если матчи есть, продолжаем цикл через небольшую задержку
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                     self.startMatchCycle(row: row, col: col, iteration: iteration + 1)
                 }
+            } else {
+                // Если матчей больше нет, завершаем процесс
+                print("Матчинг завершен после \(iteration) итераций")
             }
         }
     }

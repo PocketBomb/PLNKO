@@ -77,7 +77,6 @@ class GameLogic {
                             let neighborType = getType(from: neighborName)
                             let neighborColor = getColor(from: neighborName)
                             let neighborOffset = neighbor.1
-                            print(neighborName, currentElementName)
                             if currentElementColor == neighborColor,
                                
                                areElementsTouching(
@@ -155,7 +154,6 @@ class GameLogic {
         currentOffset: CGPoint,
         neighborOffset: CGPoint
     ) -> Bool {
-        print(currentType, neighborType, direction, currentOffset, neighborOffset)
 
         if currentType.contains("Square") && neighborType.contains("Square") {
             return true // Квадрат всегда соприкасается с другим квадратом

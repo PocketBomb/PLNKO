@@ -69,7 +69,8 @@ class GameRenderer {
         let startY = scene.size.height - 60
         let blockSize: CGFloat = 75
         let spacing: CGFloat = 8
-        
+        print("aaaaaaaaa")
+        print(gameBoard.elements)
         // Шаг 1: Создаем массив для хранения узлов, которые нужно удалить
         var nodesToRemove: [SKSpriteNode] = []
         
@@ -77,13 +78,7 @@ class GameRenderer {
         for row in 0..<gameBoard.elements.count {
             for col in 0..<gameBoard.elements[row].count {
                 // Удаляем старые узлы из текущей клетки
-                for node in gameBoard.elementNodes[row][col] {
-                    if let node = node {
-                        nodesToRemove.append(node)
-                    }
-                }
-                
-                // Очищаем массив узлов для данной клетки
+                gameBoard.elementNodes[row][col].forEach { $0?.removeFromParent() }
                 gameBoard.elementNodes[row][col].removeAll()
                 
                 // Добавляем новые элементы
@@ -131,7 +126,6 @@ class GameRenderer {
                         let color = gameLogic.getColor(from: node.name!)
                         let element = SKSpriteNode(imageNamed: color+"Square")
                         element.name = color+"Square"
-                        gameBoard.elementNodes[row][col].append(element)
                         gameBoard.elements[row][col].append((color+"Square", CGPoint(x: 0, y: 0)))
                         flag = true
                     }
@@ -154,18 +148,14 @@ class GameRenderer {
                 if !quarters.isEmpty {
                     // Определяем, какие четвертинки отсутствуют
                     let missingQuarters = getMissingQuarters(from: gameBoard.elements[row][col])
-                    print(missingQuarters)
+                    
                     // Обрабатываем случай, когда остается одна или несколько четвертинок
                     if let newElements = convertQuartersToHalves(quarters: quarters, missingQuarters: missingQuarters, itemsInBlock: gameBoard.elements[row][col]) {
                         
                         gameBoard.elements[row][col] = []
-                        gameBoard.elementNodes[row][col] = []
                         
                         // Добавляем новые половинки в данные
                         gameBoard.elements[row][col].append(contentsOf: newElements)
-                        gameBoard.elementNodes[row][col].append(contentsOf: newElements.map { name in
-                            SKSpriteNode(imageNamed: name.0)
-                        })
                         flag = true
                     }
                 }
@@ -224,8 +214,6 @@ class GameRenderer {
     
     // Вспомогательная функция: преобразование четвертинок в половинки
     private func convertQuartersToHalves(quarters: [(String, CGPoint)], missingQuarters: [CGPoint], itemsInBlock: [(String, CGPoint)]) -> [(String, CGPoint)]? {
-        // Если остались три четвертинки, преобразуем одну из них в половинку
-        print(itemsInBlock, missingQuarters)
         if quarters.count == 3 {
             return mergeThreeQuartersToHalves(items: itemsInBlock, missingQuarters: missingQuarters)
         } else if itemsInBlock.count == 2 && missingQuarters.count == 1{
@@ -235,16 +223,6 @@ class GameRenderer {
         } else if missingQuarters.count == 3 && itemsInBlock.count == 1 {
             return mergeQuarterToHalf(items: itemsInBlock, missingQuarters: missingQuarters)
         }
-        
-        //        // Если остались две четвертинки, попробуем объединить их в одну половинку
-        //        if quarters.count == 2 {
-        //            return mergeTwoQuartersToHalf(quarters: quarters, missingQuarters: missingQuarters)
-        //        }
-        //
-        //        // Если осталась одна четвертинка, преобразуем её в половинку
-        //        if quarters.count == 1 {
-        ////            return convertSingleQuarterToHalf(quarter: quarters.first!)
-        //        }
         
         return nil
     }

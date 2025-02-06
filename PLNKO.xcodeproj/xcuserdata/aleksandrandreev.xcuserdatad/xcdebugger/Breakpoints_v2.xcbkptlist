@@ -14,8 +14,8 @@
             filePath = "PLNKO/View/Game/GameScene/GameLogic.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "222"
-            endingLineNumber = "222"
+            startingLineNumber = "220"
+            endingLineNumber = "220"
             landmarkName = "areElementsTouching(currentType:neighborType:direction:currentOffset:neighborOffset:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -30,8 +30,8 @@
             filePath = "PLNKO/View/Game/GameScene/GameLogic.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "223"
-            endingLineNumber = "223"
+            startingLineNumber = "221"
+            endingLineNumber = "221"
             landmarkName = "areElementsTouching(currentType:neighborType:direction:currentOffset:neighborOffset:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -46,8 +46,8 @@
             filePath = "PLNKO/View/Game/GameScene/GameLogic.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "207"
-            endingLineNumber = "207"
+            startingLineNumber = "205"
+            endingLineNumber = "205"
             landmarkName = "areElementsTouching(currentType:neighborType:direction:currentOffset:neighborOffset:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -62,8 +62,8 @@
             filePath = "PLNKO/View/Game/GameScene/GameRender.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "349"
-            endingLineNumber = "349"
+            startingLineNumber = "327"
+            endingLineNumber = "327"
             landmarkName = "mergeThreeQuartersToHalves(items:missingQuarters:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -78,25 +78,9 @@
             filePath = "PLNKO/View/Game/GameScene/GameRender.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "285"
-            endingLineNumber = "285"
+            startingLineNumber = "263"
+            endingLineNumber = "263"
             landmarkName = "mergeQuarterAndHalfToTwoHalf(items:missingQuarters:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "8C826DA7-8AE1-42FB-AAF3-16D88A8781B2"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "PLNKO/View/Game/GameScene/GameRender.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "227"
-            endingLineNumber = "227"
-            landmarkName = "convertQuartersToHalves(quarters:missingQuarters:itemsInBlock:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

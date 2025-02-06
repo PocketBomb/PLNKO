@@ -44,10 +44,13 @@ class GameBoard {
     }
     
     func placeElement(at position: (Int, Int)) {
-        guard let elementsToAdd = selectedElement1 else { return } 
-        for (name, offset) in elementsToAdd {
-            elements[position.0][position.1].append((name, offset))
+        guard let elementsToAdd = selectedElement1 else { return }
+        if elements[position.0][position.1].isEmpty {
+            for (name, offset) in elementsToAdd {
+                elements[position.0][position.1].append((name, offset))
+            }
         }
+        
 
         deselectAll()
     }

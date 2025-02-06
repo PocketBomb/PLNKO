@@ -62,25 +62,46 @@ class GameScene: SKScene {
         if let index = gameRenderer.handleStartBlockTouch(location: location, gameBoard: gameBoard) {
             gameBoard.selectElement(at: index)
         } else if let (row, col) = gameRenderer.handleGameBoardTouch(location: location, gameBoard: gameBoard) {
+            // Размещаем элемент на игровом поле
             gameLogic.placeElement(on: gameBoard, at: (row, col))
-
             gameRenderer.updateGameBoard(on: self, gameBoard: gameBoard)
-
-            // Задержка перед проверкой матчинга
+            // Запускаем процесс матчинга и обновления поля
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                self.gameLogic.checkAndRemoveMatches(on: self.gameBoard)
-                self.gameRenderer.updateGameBoard(on: self, gameBoard: self.gameBoard)
-                self.gameBoard.deselectAll()
-                
-            }
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                if self.gameRenderer.changeHalfToSquare(scene: self, gameBoard: self.gameBoard) {
-                    self.gameRenderer.updateGameBoard(on: self, gameBoard: self.gameBoard)
-                }
+                self.startMatchCycle(row: row, col: col, iteration: 0)
             }
         } else {
             gameBoard.deselectAll()
+        }
+    }
+    
+    private func startMatchCycle(row: Int, col: Int, iteration: Int) {
+        guard iteration < 8 else {
+            print("Превышено максимальное количество итераций матчинга")
+            return // Останавливаем цикл, если достигнут лимит итераций
+        }
+
+        // Проверяем матчи и удаляем элементы
+        gameLogic.checkAndRemoveMatches(on: gameBoard)
+        
+        // Обновляем игровое поле
+        gameRenderer.updateGameBoard(on: self, gameBoard: gameBoard)
+
+        // Преобразуем половинки в квадраты
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            if self.gameRenderer.changeHalfToSquare(scene: self, gameBoard: self.gameBoard) {
+                self.gameRenderer.updateGameBoard(on: self, gameBoard: self.gameBoard)
+            }
+            if self.gameRenderer.changeQuarterToHalf(gameBoard: self.gameBoard) {
+                self.gameRenderer.updateGameBoard(on: self, gameBoard: self.gameBoard)
+            }
+            
+            // Проверяем, остались ли матчи
+            if self.gameLogic.hasMatches(on: self.gameBoard) {
+                // Если матчи есть, продолжаем цикл
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    self.startMatchCycle(row: row, col: col, iteration: iteration + 1)
+                }
+            }
         }
     }
    

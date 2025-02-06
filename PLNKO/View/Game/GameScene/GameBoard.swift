@@ -7,11 +7,12 @@ class GameBoard {
     init(size: CGSize) {
         self.size = size
     }
+    
     var elements: [[[(String, CGPoint)]]] = [
         [[], [], [], [("whiteSquare", CGPoint(x: 0, y: 0))]],
-        [[], [("redHorizontalHalf", CGPoint(x: 0, y: 19)), ("orangeHorizontalHalf", CGPoint(x: 0, y: -19))], [], []],
+        [[], [("blueQuarter",CGPoint(x: -19, y: 19))], [], []],
         [[], [], [], [("redVerticalHalf", CGPoint(x: -19, y: 0)), ("greenVerticalHalf", CGPoint(x: 19, y: 0))]],
-        [[], [], [("orangeVerticalHalf", CGPoint(x: -19, y: 0)), ("purpleVerticalHalf", CGPoint(x: 19, y: 0))], [("blueSquare", CGPoint(x: 0, y: 0))]]
+        [[], [], [], [("orangeSquare", CGPoint(x: 0, y: 0))]]
     ]
     var elementNodes: [[[SKSpriteNode?]]] = Array(repeating: Array(repeating: [], count: 4), count: 4)
     var startBlockNodes: [SKSpriteNode] = []
@@ -22,7 +23,8 @@ class GameBoard {
     var selectedElement1: [(String, CGPoint)]? = nil
     let startImages = ["whiteSquare", "orangeSquare"]
     
-    let startImages1 = [[("orangeHorizontalHalf", CGPoint(x: 0, y: 19)), ("redHorizontalHalf", CGPoint(x: 0, y: -19))], [("whiteSquare", CGPoint(x: 0, y: 0))]]
+    let startImages1 = [[("orangeQuarter",CGPoint(x: -19, y: -19)), ("redQuarter",CGPoint(x: 19, y: -19)), ("whiteQuarter",CGPoint(x: 19, y: 19)),
+                         ("blueQuarter",CGPoint(x: -19, y: 19))], [ ("blueSquare", CGPoint(x: 0, y: 0))]]
 
     func selectElement(at index: Int) {
         if tappedSquareIndex == index {

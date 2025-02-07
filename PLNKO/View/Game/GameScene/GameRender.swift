@@ -7,9 +7,11 @@ class GameRenderer {
     var gameLogic: GameLogic
     let blockSize: CGFloat = 75
     let spacing: CGFloat = 8
+    var isCellAvailable: [[Bool]]
     
-    init(gameLogic: GameLogic) {
+    init(gameLogic: GameLogic, isCellAvailable: [[Bool]]) {
         self.gameLogic = gameLogic
+        self.isCellAvailable = isCellAvailable
     }
     
     func setupGameBoard(on scene: SKScene, gameBoard: GameBoard) {
@@ -20,6 +22,9 @@ class GameRenderer {
         
         for row in 0..<gameBoard.elements.count {
             for col in 0..<gameBoard.elements[row].count {
+                if isCellAvailable[row][col] == false {
+                    continue
+                }
                 let xPos = startX + CGFloat(col) * (blockSize + spacing)
                 let yPos = startY - CGFloat(row) * (blockSize + spacing)
                 let block = SKSpriteNode(imageNamed: "gameBoardBlock")
@@ -48,6 +53,7 @@ class GameRenderer {
     }
     
     func handleGameBoardTouch(location: CGPoint, gameBoard: GameBoard) -> (Int, Int)? {
+        print(location)
         let startX = (gameBoard.size.width - 249) / 2
         let startY = gameBoard.size.height - 60
         
@@ -64,13 +70,30 @@ class GameRenderer {
         return nil
     }
     
+    func handleRemoveBoostTouch(location: CGPoint, gameBoard: GameBoard) -> (Int, Int)? {
+        print(location)
+        let startX = (gameBoard.size.width - 249) / 2
+        let startY = gameBoard.size.height - 60
+        
+        for row in 0..<gameBoard.elements.count {
+            for col in 0..<gameBoard.elements[row].count {
+                let xPos = startX + CGFloat(col) * (blockSize + spacing)
+                let yPos = startY - CGFloat(row) * (blockSize + spacing)
+                let blockRect = CGRect(x: xPos - blockSize / 2, y: yPos - blockSize / 2, width: blockSize, height: blockSize)
+                if blockRect.contains(location) {
+                    return (row, col)
+                }
+                
+            }
+        }
+        return nil
+    }
+    
     func updateGameBoard(on scene: SKScene, gameBoard: GameBoard) {
         let startX = (scene.size.width - 249) / 2
         let startY = scene.size.height - 60
         let blockSize: CGFloat = 75
         let spacing: CGFloat = 8
-        print("aaaaaaaaa")
-        print(gameBoard.elements)
         // Шаг 1: Создаем массив для хранения узлов, которые нужно удалить
         var nodesToRemove: [SKSpriteNode] = []
         
@@ -78,6 +101,9 @@ class GameRenderer {
         for row in 0..<gameBoard.elements.count {
             for col in 0..<gameBoard.elements[row].count {
                 // Удаляем старые узлы из текущей клетки
+                if !gameBoard.isCellAvailable[row][col]{
+                    continue
+                }
                 gameBoard.elementNodes[row][col].forEach { $0?.removeFromParent() }
                 gameBoard.elementNodes[row][col].removeAll()
                 
@@ -137,7 +163,7 @@ class GameRenderer {
     
     
     
-    func changeQuarterToHalf(gameBoard: GameBoard) -> Bool {
+    func changeQuarterToHalf(gameBoard: GameBoard, gameLogic: GameLogic) -> Bool {
         var flag = false
         
         for row in 0..<gameBoard.elements.count {
@@ -150,7 +176,7 @@ class GameRenderer {
                     let missingQuarters = getMissingQuarters(from: gameBoard.elements[row][col])
                     
                     // Обрабатываем случай, когда остается одна или несколько четвертинок
-                    if let newElements = convertQuartersToHalves(quarters: quarters, missingQuarters: missingQuarters, itemsInBlock: gameBoard.elements[row][col]) {
+                    if let newElements = gameLogic.convertQuartersToHalves(quarters: quarters, missingQuarters: missingQuarters, itemsInBlock: gameBoard.elements[row][col]) {
                         
                         gameBoard.elements[row][col] = []
                         
@@ -211,150 +237,5 @@ class GameRenderer {
 
         return missingQuarters
     }
-    
-    // Вспомогательная функция: преобразование четвертинок в половинки
-    private func convertQuartersToHalves(quarters: [(String, CGPoint)], missingQuarters: [CGPoint], itemsInBlock: [(String, CGPoint)]) -> [(String, CGPoint)]? {
-        if quarters.count == 3 {
-            return mergeThreeQuartersToHalves(items: itemsInBlock, missingQuarters: missingQuarters)
-        } else if itemsInBlock.count == 2 && missingQuarters.count == 1{
-            return mergeQuarterAndHalfToTwoHalf(items: itemsInBlock, missingQuarters: missingQuarters)
-        } else if missingQuarters.count == 2 && itemsInBlock.count == 2 {
-            return mergeTwoQuartersToTwoHalfs(items: itemsInBlock, missingQuarters: missingQuarters)
-        } else if missingQuarters.count == 3 && itemsInBlock.count == 1 {
-            return mergeQuarterToHalf(items: itemsInBlock, missingQuarters: missingQuarters)
-        }
-        
-        return nil
-    }
-    
-    private func mergeQuarterToHalf(items: [(String, CGPoint)], missingQuarters: [CGPoint]) -> [(String, CGPoint)] {
-        var newItems:[(String, CGPoint)] = []
-        let item = items.first!
-        let color = gameLogic.getColor(from: item.0)
-        newItems.append((color+"HorizontalHalf", CGPoint(x: 0, y: item.1.y)))
-        return newItems
-    }
-    
-    private func mergeTwoQuartersToTwoHalfs(items: [(String, CGPoint)], missingQuarters: [CGPoint]) -> [(String, CGPoint)] {
-        var newItems:[(String, CGPoint)] = []
-        var color1 = ""
-        var color2 = ""
-        let item1 = items[0]
-        let item2 = items[1]
-        color1 = gameLogic.getColor(from: item1.0)
-        color2 = gameLogic.getColor(from: item2.0)
-        if item1.1.y == item2.1.y {
-            
-            newItems.append((color1+"VerticalHalf", CGPoint(x: item1.1.x, y: 0)))
-            newItems.append((color2+"VerticalHalf", CGPoint(x: item2.1.x, y: 0)))
-        } else if item1.1.x == item2.1.x {
-            newItems.append((color1+"HorizontalHalf", CGPoint(x: 0, y: item1.1.y)))
-            newItems.append((color2+"HorizontalHalf", CGPoint(x: 0, y: item2.1.y)))
-        } else {
-            newItems.append((color1+"VerticalHalf", CGPoint(x: item1.1.x, y: 0)))
-            newItems.append((color2+"VerticalHalf", CGPoint(x: item2.1.x, y: 0)))
-        }
-        
-        return newItems
-    }
-    
-    private func mergeQuarterAndHalfToTwoHalf(items: [(String, CGPoint)], missingQuarters: [CGPoint]) -> [(String, CGPoint)] {
-        guard let missingQuarter = missingQuarters.first else { return [] }
-        var newItems = items
-        var color = ""
-
-        // Определяем, какую четвертинку преобразовать в половинку
-        switch missingQuarter {
-        case CGPoint(x: -19, y: -19): // Пропущен левый нижний угол
-            if newItems.contains(where: {$0.0.contains("VerticalHalf")}) {
-                let item = newItems.first(where: {$0.1 == CGPoint(x: -19, y: 19)})
-                newItems.removeAll(where: {$0.1 == CGPoint(x: -19, y: 19)})
-                color = gameLogic.getColor(from: item?.0 ?? "white")
-                newItems.append((color+"VerticalHalf", CGPoint(x: -19, y: 0)))
-            } else if newItems.contains(where: {$0.0.contains("HorizontalHalf")}) {
-                let item = newItems.first(where: {$0.1 == CGPoint(x: 19, y: -19)})
-                newItems.removeAll(where: {$0.1 == CGPoint(x: 19, y: -19)})
-                color = gameLogic.getColor(from: item?.0 ?? "white")
-                newItems.append((color+"HorizontalHalf", CGPoint(x: 0, y: -19)))
-            }
-        case CGPoint(x: 19, y: -19): // Пропущен правый нижний угол
-            if newItems.contains(where: {$0.0.contains("VerticalHalf")}) {
-                let item = newItems.first(where: {$0.1 == CGPoint(x: 19, y: 19)})
-                newItems.removeAll(where: {$0.1 == CGPoint(x: 19, y: 19)})
-                color = gameLogic.getColor(from: item?.0 ?? "white")
-                newItems.append((color+"VerticalHalf", CGPoint(x: 19, y: 0)))
-            } else if newItems.contains(where: {$0.0.contains("HorizontalHalf")}) {
-                let item = newItems.first(where: {$0.1 == CGPoint(x: -19, y: -19)})
-                newItems.removeAll(where: {$0.1 == CGPoint(x: -19, y: -19)})
-                color = gameLogic.getColor(from: item?.0 ?? "white")
-                newItems.append((color+"HorizontalHalf", CGPoint(x: 0, y: -19)))
-            }
-        case CGPoint(x: 19, y: 19): // Пропущен правый верхний угол
-            if newItems.contains(where: {$0.0.contains("VerticalHalf")}) {
-                let item = newItems.first(where: {$0.1 == CGPoint(x: 19, y: -19)})
-                newItems.removeAll(where: {$0.1 == CGPoint(x: 19, y: -19)})
-                color = gameLogic.getColor(from: item?.0 ?? "white")
-                newItems.append((color+"VerticalHalf", CGPoint(x: 19, y: 0)))
-            } else if newItems.contains(where: {$0.0.contains("HorizontalHalf")}) {
-                let item = newItems.first(where: {$0.1 == CGPoint(x: -19, y: 19)})
-                newItems.removeAll(where: {$0.1 == CGPoint(x: -19, y: 19)})
-                color = gameLogic.getColor(from: item?.0 ?? "white")
-                newItems.append((color+"HorizontalHalf", CGPoint(x: 0, y: 19)))
-            }
-        case CGPoint(x: -19, y: 19): // Пропущен левый верхний угол
-            if newItems.contains(where: {$0.0.contains("VerticalHalf")}) {
-                let item = newItems.first(where: {$0.1 == CGPoint(x: -19, y: -19)})
-                newItems.removeAll(where: {$0.1 == CGPoint(x: -19, y: -19)})
-                color = gameLogic.getColor(from: item?.0 ?? "white")
-                newItems.append((color+"VerticalHalf", CGPoint(x: -19, y: 0)))
-            } else if newItems.contains(where: {$0.0.contains("HorizontalHalf")}) {
-                let item = newItems.first(where: {$0.1 == CGPoint(x: 19, y: 19)})
-                newItems.removeAll(where: {$0.1 == CGPoint(x: 19, y: 19)})
-                color = gameLogic.getColor(from: item?.0 ?? "white")
-                newItems.append((color+"HorizontalHalf", CGPoint(x: 0, y: 19)))
-            }
-        default:
-            newItems = items
-        }
-                            
-        return newItems
-    }
-
-    // Преобразование трех четвертинок в половинки
-    private func mergeThreeQuartersToHalves(items: [(String, CGPoint)], missingQuarters: [CGPoint]) -> [(String, CGPoint)] {
-        guard let missingQuarter = missingQuarters.first else { return [] }
-        var newItems = items
-        var color = ""
-
-        // Определяем, какую четвертинку преобразовать в половинку
-        switch missingQuarter {
-        case CGPoint(x: -19, y: -19): // Пропущен левый нижний угол
-            let item = newItems.first(where: {$0.1 == CGPoint(x: -19, y: 19)})
-            newItems.removeAll(where: {$0.1 == CGPoint(x: -19, y: 19)})
-            color = gameLogic.getColor(from: item?.0 ?? "white")
-            newItems.append((color+"VerticalHalf", CGPoint(x: -19, y: 0)))
-            
-        case CGPoint(x: 19, y: -19): // Пропущен правый нижний угол
-            let item = newItems.first(where: {$0.1 == CGPoint(x: 19, y: 19)})
-            newItems.removeAll(where: {$0.1 == CGPoint(x: 19, y: 19)})
-            color = gameLogic.getColor(from: item?.0 ?? "white")
-            newItems.append((color+"VerticalHalf", CGPoint(x: 19, y: 0)))
-        case CGPoint(x: 19, y: 19): // Пропущен правый верхний угол
-            let item = newItems.first(where: {$0.1 == CGPoint(x: 19, y: -19)})
-            newItems.removeAll(where: {$0.1 == CGPoint(x: 19, y: -19)})
-            color = gameLogic.getColor(from: item?.0 ?? "white")
-            newItems.append((color+"VerticalHalf", CGPoint(x: 19, y: 0)))
-        case CGPoint(x: -19, y: 19): // Пропущен левый верхний угол
-            let item = newItems.first(where: {$0.1 == CGPoint(x: -19, y: -19)})
-            newItems.removeAll(where: {$0.1 == CGPoint(x: -19, y: -19)})
-            color = gameLogic.getColor(from: item?.0 ?? "white")
-            newItems.append((color+"VerticalHalf", CGPoint(x: -19, y: 0)))
-        default:
-            newItems = items
-        }
-                            
-        return newItems
-    }
-
     
 }

@@ -5,24 +5,84 @@ import SpriteKit
 class GameScene: SKScene {
     private var gameBoard: GameBoard
     private var gameRenderer: GameRenderer
+    var gameBoardCells: [[Bool]]
+    var elements: [[[(String, CGPoint)]]]
+    var goal: [String: Int]
+    var timerLabel: SKLabelNode!
+    private var isRemoveModeActive = false
+    private var remainingTime: Int = 100
+    private var timer: Timer?
     private var gameLogic = GameLogic()
-
-    override init(size: CGSize) {
-        self.gameBoard = GameBoard(size: size)
-        self.gameRenderer = GameRenderer(gameLogic: gameLogic)
+    
+    
+    init(size: CGSize, goal: [String: Int], elements: [[[(String, CGPoint)]]], gameBoardCells: [[Bool]]) {
+        self.goal = goal
+        self.elements = elements
+        self.gameBoardCells = gameBoardCells
+        self.gameBoard = GameBoard(size: size, elements: elements, isCellAvailable: gameBoardCells)
+        self.gameRenderer = GameRenderer(gameLogic: gameLogic, isCellAvailable: gameBoardCells)
         super.init(size: size)
         backgroundColor = .clear
         addBackgroundImage()
         gameRenderer.setupGameBoard(on: self, gameBoard: gameBoard)
         setupStartBlocks()
+        startTimer()
+        addTimerLabel()
+        setupRemoveButton()
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    
+    private func setupRemoveButton() {
+        let removeButton = SKSpriteNode(imageNamed: "removeButton")
+        removeButton.size = CGSize(width: 65, height: 72.22)
+        removeButton.position = CGPoint(x: size.width - 80, y: 140)
+        removeButton.zPosition = 1
+        removeButton.name = "removeButton"
+        addChild(removeButton)
+    }
+    
+    private func startTimer() {
+            // Создаем таймер, который уменьшает оставшееся время каждую секунду
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            
+            if self.remainingTime > 0 {
+                self.remainingTime -= 1
+                self.updateTimerLabel()
+            } else {
+                self.endGameDueToTimeout()
+            }
+        }
+    }
+        
+    private func addTimerLabel() {
+        // Создаем текстовый узел для отображения времени
+        if SizeConverter.isSmallScreen {
+            timerLabel = SKLabelNode(text: "\(remainingTime)s")
+        } else {
+            timerLabel = SKLabelNode(text: "Time: \(remainingTime)s")
+        }
+        timerLabel.fontName = Resources.Fonts.jomhuria
+        timerLabel.fontSize = 33
+        timerLabel.fontColor = .white
+        timerLabel.position = CGPoint(x: size.width / 2, y: SizeConverter.isSmallScreen ? 80 : 140)
+        addChild(timerLabel)
+    }
+    
+    private func updateTimerLabel() {
+        // Обновляем текст таймера
+        if SizeConverter.isSmallScreen {
+            timerLabel.text = "\(remainingTime)s"
+        } else {
+            timerLabel.text = "Time: \(remainingTime)s"
+        }
+    }
 
     private func addBackgroundImage() {
-        let background = SKSpriteNode(imageNamed: "gameSceneBack")
+        let background = SKSpriteNode(imageNamed: SizeConverter.isSmallScreen ? "gameSceneBackSmall" :"gameSceneBack")
         background.position = CGPoint(x: size.width / 2, y: size.height / 2)
         background.zPosition = -1
         addChild(background)
@@ -30,8 +90,8 @@ class GameScene: SKScene {
     
     private func setupStartBlocks() {
         let startBlockSize: CGFloat = 75
-        let yOffset: CGFloat = startBlockSize / 2
-        let startXPositions = [startBlockSize / 2, size.width - startBlockSize / 2]
+        let yOffset: CGFloat = startBlockSize / 2 + 20
+        let startXPositions = [startBlockSize / 2+40, size.width - startBlockSize / 2-40]
 
         for (index, startX) in startXPositions.enumerated() {
             let block = SKSpriteNode(imageNamed: "startBlockImage")
@@ -42,7 +102,7 @@ class GameScene: SKScene {
             gameBoard.startBlockNodes.append(block)
             var squareGroup = [SKSpriteNode]() // Группа элементов для текущего стартового блока
 
-            for (name, offset) in gameBoard.startImages1[index] { // Используем startImages1
+            for (name, offset) in gameBoard.startImages[index] { // Используем startImages1
                 let square = SKSpriteNode(imageNamed: name)
                 square.position = CGPoint(x: block.position.x + offset.x, y: block.position.y + offset.y)
                 square.name = name
@@ -50,28 +110,112 @@ class GameScene: SKScene {
                 squareGroup.append(square)
             }
 
-            gameBoard.startSquares1.append(squareGroup)
+            gameBoard.startSquares.append(squareGroup)
         }
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
-
+        if let node = atPoint(location) as? SKSpriteNode, node.name == "removeButton" {
+            isRemoveModeActive = true
+            print("Активирован режим удаления!")
+            return
+        }
+        if isRemoveModeActive {
+            if let (row, col) = gameRenderer.handleRemoveBoostTouch(location: location, gameBoard: gameBoard) {
+                clearCell(at: (row, col))
+                isRemoveModeActive = false // Отключаем режим удаления после очистки клетки
+            }
+            return
+        }
+        
         // Обработка нажатия на стартовые блоки
         if let index = gameRenderer.handleStartBlockTouch(location: location, gameBoard: gameBoard) {
             gameBoard.selectElement(at: index)
         } else if let (row, col) = gameRenderer.handleGameBoardTouch(location: location, gameBoard: gameBoard) {
             // Размещаем элемент на игровом поле
-            gameLogic.placeElement(on: gameBoard, at: (row, col))
+            gameLogic.placeElement(on: gameBoard, at: (row, col), scene: self)
             gameRenderer.updateGameBoard(on: self, gameBoard: gameBoard)
             // Запускаем процесс матчинга и обновления поля
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 self.startMatchCycle(row: row, col: col, iteration: 0)
+                
+                if self.isGoalCompleted() {
+                    self.endGame()
+                }
             }
         } else {
             gameBoard.deselectAll()
         }
+    }
+    
+    private func clearCell(at position: (Int, Int)) {
+        print(position)
+        guard !gameBoard.elements[position.0][position.1].isEmpty else {
+            print("Клетка уже пуста!")
+            return
+        }
+        
+        // Добавляем элементы в matchCount
+        for element in gameBoard.elements[position.0][position.1] {
+            let color = gameLogic.getColor(from: element.0)
+            gameBoard.matchCount[color, default: 0] += 1
+            gameBoard.removeElements(at: [(position.0, position.1, element.0)], gameLogic: gameLogic)
+        }
+
+
+        // Обновляем графическое представление
+        gameRenderer.updateGameBoard(on: self, gameBoard: gameBoard)
+
+        print("Клетка очищена! Текущее состояние matchCount: \(gameBoard.matchCount)")
+    }
+    
+    private func isGoalCompleted() -> Bool {
+        for (color, targetValue) in goal {
+            if let matchCountValue = gameBoard.matchCount[color], matchCountValue < targetValue {
+                return false // Если хотя бы один цвет не достиг цели, игра продолжается
+            }
+        }
+        return true // Все цвета достигли целей
+    }
+    
+    private func endGameDueToTimeout() {
+            // Останавливаем таймер
+        timer?.invalidate()
+        
+        print("Игра завершена по истечении времени!")
+        
+        // Удаляем все элементы с поля
+        for row in 0..<gameBoard.elements.count {
+            for col in 0..<gameBoard.elements[row].count {
+                gameBoard.elementNodes[row][col].forEach { $0?.removeFromParent() }
+                gameBoard.elementNodes[row][col].removeAll()
+                gameBoard.elements[row][col].removeAll()
+            }
+        }
+        self.isPaused = true
+        // Показываем GameOverView
+        NotificationCenter.default.post(name: NSNotification.Name("GameOver"), object: nil)
+    }
+
+    private func endGame() {
+        print("Цель достигнута! Игра завершена!")
+
+        // Очищаем игровое поле
+        for row in 0..<gameBoard.elements.count {
+            for col in 0..<gameBoard.elements[row].count {
+                gameBoard.elementNodes[row][col].forEach { $0?.removeFromParent() }
+                gameBoard.elementNodes[row][col].removeAll()
+                gameBoard.elements[row][col].removeAll()
+            }
+        }
+
+
+        // Останавливаем возможность дальнейших ходов
+        self.isPaused = true
+        gameBoard.deselectAll()
+//        NotificationCenter.default.post(name: NSNotification.Name("ShowGameOver"), object: nil)
     }
     
     private func startMatchCycle(row: Int, col: Int, iteration: Int) {
@@ -109,7 +253,7 @@ class GameScene: SKScene {
         // Шаг 4: Преобразуем четвертинки в половинки
         dispatchGroup.notify(queue: .main) { // Ждем завершения предыдущего шага
             dispatchGroup.enter()
-            if self.gameRenderer.changeQuarterToHalf(gameBoard: self.gameBoard) {
+            if self.gameRenderer.changeQuarterToHalf(gameBoard: self.gameBoard, gameLogic: self.gameLogic) {
 //                dispatchGroup.enter() // Входим в группу
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                     self.gameRenderer.updateGameBoard(on: self, gameBoard: self.gameBoard)

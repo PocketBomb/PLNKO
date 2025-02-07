@@ -2,8 +2,9 @@
 import SpriteKit
 
 class GameLogic {
-    func placeElement(on gameBoard: GameBoard, at position: (Int, Int)) {
-        gameBoard.placeElement(at: position)
+    
+    func placeElement(on gameBoard: GameBoard, at position: (Int, Int), scene: GameScene) {
+        gameBoard.placeElement(at: position, scene: scene)
     }
     
     func hasMatches(on gameBoard: GameBoard) -> Bool {
@@ -56,6 +57,9 @@ class GameLogic {
         for row in 0..<gameBoard.elements.count {
             for col in 0..<gameBoard.elements[row].count {
                 guard !gameBoard.elements[row][col].isEmpty else { continue }
+                if !gameBoard.isCellAvailable[row][col]{
+                    continue
+                }
                 for currentElem in gameBoard.elements[row][col] {
                     let currentOffset = currentElem.1
                     let currentElementName = currentElem.0
@@ -105,7 +109,7 @@ class GameLogic {
             }
         }
 
-        gameBoard.removeElements(at: toRemove)
+        gameBoard.removeElements(at: toRemove, gameLogic: self)
     }
     
    
@@ -267,6 +271,149 @@ class GameLogic {
         }
 
         return false
+    }
+    
+    public func convertQuartersToHalves(quarters: [(String, CGPoint)], missingQuarters: [CGPoint], itemsInBlock: [(String, CGPoint)]) -> [(String, CGPoint)]? {
+        if quarters.count == 3 {
+            return mergeThreeQuartersToHalves(items: itemsInBlock, missingQuarters: missingQuarters)
+        } else if itemsInBlock.count == 2 && missingQuarters.count == 1{
+            return mergeQuarterAndHalfToTwoHalf(items: itemsInBlock, missingQuarters: missingQuarters)
+        } else if missingQuarters.count == 2 && itemsInBlock.count == 2 {
+            return mergeTwoQuartersToTwoHalfs(items: itemsInBlock, missingQuarters: missingQuarters)
+        } else if missingQuarters.count == 3 && itemsInBlock.count == 1 {
+            return mergeQuarterToHalf(items: itemsInBlock, missingQuarters: missingQuarters)
+        }
+        
+        return nil
+    }
+    
+    private func mergeQuarterToHalf(items: [(String, CGPoint)], missingQuarters: [CGPoint]) -> [(String, CGPoint)] {
+        var newItems:[(String, CGPoint)] = []
+        let item = items.first!
+        let color = getColor(from: item.0)
+        newItems.append((color+"HorizontalHalf", CGPoint(x: 0, y: item.1.y)))
+        return newItems
+    }
+    
+    private func mergeTwoQuartersToTwoHalfs(items: [(String, CGPoint)], missingQuarters: [CGPoint]) -> [(String, CGPoint)] {
+        var newItems:[(String, CGPoint)] = []
+        var color1 = ""
+        var color2 = ""
+        let item1 = items[0]
+        let item2 = items[1]
+        color1 = getColor(from: item1.0)
+        color2 = getColor(from: item2.0)
+        if item1.1.y == item2.1.y {
+            
+            newItems.append((color1+"VerticalHalf", CGPoint(x: item1.1.x, y: 0)))
+            newItems.append((color2+"VerticalHalf", CGPoint(x: item2.1.x, y: 0)))
+        } else if item1.1.x == item2.1.x {
+            newItems.append((color1+"HorizontalHalf", CGPoint(x: 0, y: item1.1.y)))
+            newItems.append((color2+"HorizontalHalf", CGPoint(x: 0, y: item2.1.y)))
+        } else {
+            newItems.append((color1+"VerticalHalf", CGPoint(x: item1.1.x, y: 0)))
+            newItems.append((color2+"VerticalHalf", CGPoint(x: item2.1.x, y: 0)))
+        }
+        
+        return newItems
+    }
+    
+    private func mergeQuarterAndHalfToTwoHalf(items: [(String, CGPoint)], missingQuarters: [CGPoint]) -> [(String, CGPoint)] {
+        guard let missingQuarter = missingQuarters.first else { return [] }
+        var newItems = items
+        var color = ""
+
+        // Определяем, какую четвертинку преобразовать в половинку
+        switch missingQuarter {
+        case CGPoint(x: -19, y: -19): // Пропущен левый нижний угол
+            if newItems.contains(where: {$0.0.contains("VerticalHalf")}) {
+                let item = newItems.first(where: {$0.1 == CGPoint(x: -19, y: 19)})
+                newItems.removeAll(where: {$0.1 == CGPoint(x: -19, y: 19)})
+                color = getColor(from: item?.0 ?? "white")
+                newItems.append((color+"VerticalHalf", CGPoint(x: -19, y: 0)))
+            } else if newItems.contains(where: {$0.0.contains("HorizontalHalf")}) {
+                let item = newItems.first(where: {$0.1 == CGPoint(x: 19, y: -19)})
+                newItems.removeAll(where: {$0.1 == CGPoint(x: 19, y: -19)})
+                color = getColor(from: item?.0 ?? "white")
+                newItems.append((color+"HorizontalHalf", CGPoint(x: 0, y: -19)))
+            }
+        case CGPoint(x: 19, y: -19): // Пропущен правый нижний угол
+            if newItems.contains(where: {$0.0.contains("VerticalHalf")}) {
+                let item = newItems.first(where: {$0.1 == CGPoint(x: 19, y: 19)})
+                newItems.removeAll(where: {$0.1 == CGPoint(x: 19, y: 19)})
+                color = getColor(from: item?.0 ?? "white")
+                newItems.append((color+"VerticalHalf", CGPoint(x: 19, y: 0)))
+            } else if newItems.contains(where: {$0.0.contains("HorizontalHalf")}) {
+                let item = newItems.first(where: {$0.1 == CGPoint(x: -19, y: -19)})
+                newItems.removeAll(where: {$0.1 == CGPoint(x: -19, y: -19)})
+                color = getColor(from: item?.0 ?? "white")
+                newItems.append((color+"HorizontalHalf", CGPoint(x: 0, y: -19)))
+            }
+        case CGPoint(x: 19, y: 19): // Пропущен правый верхний угол
+            if newItems.contains(where: {$0.0.contains("VerticalHalf")}) {
+                let item = newItems.first(where: {$0.1 == CGPoint(x: 19, y: -19)})
+                newItems.removeAll(where: {$0.1 == CGPoint(x: 19, y: -19)})
+                color = getColor(from: item?.0 ?? "white")
+                newItems.append((color+"VerticalHalf", CGPoint(x: 19, y: 0)))
+            } else if newItems.contains(where: {$0.0.contains("HorizontalHalf")}) {
+                let item = newItems.first(where: {$0.1 == CGPoint(x: -19, y: 19)})
+                newItems.removeAll(where: {$0.1 == CGPoint(x: -19, y: 19)})
+                color = getColor(from: item?.0 ?? "white")
+                newItems.append((color+"HorizontalHalf", CGPoint(x: 0, y: 19)))
+            }
+        case CGPoint(x: -19, y: 19): // Пропущен левый верхний угол
+            if newItems.contains(where: {$0.0.contains("VerticalHalf")}) {
+                let item = newItems.first(where: {$0.1 == CGPoint(x: -19, y: -19)})
+                newItems.removeAll(where: {$0.1 == CGPoint(x: -19, y: -19)})
+                color = getColor(from: item?.0 ?? "white")
+                newItems.append((color+"VerticalHalf", CGPoint(x: -19, y: 0)))
+            } else if newItems.contains(where: {$0.0.contains("HorizontalHalf")}) {
+                let item = newItems.first(where: {$0.1 == CGPoint(x: 19, y: 19)})
+                newItems.removeAll(where: {$0.1 == CGPoint(x: 19, y: 19)})
+                color = getColor(from: item?.0 ?? "white")
+                newItems.append((color+"HorizontalHalf", CGPoint(x: 0, y: 19)))
+            }
+        default:
+            newItems = items
+        }
+                            
+        return newItems
+    }
+
+    // Преобразование трех четвертинок в половинки
+    private func mergeThreeQuartersToHalves(items: [(String, CGPoint)], missingQuarters: [CGPoint]) -> [(String, CGPoint)] {
+        guard let missingQuarter = missingQuarters.first else { return [] }
+        var newItems = items
+        var color = ""
+
+        // Определяем, какую четвертинку преобразовать в половинку
+        switch missingQuarter {
+        case CGPoint(x: -19, y: -19): // Пропущен левый нижний угол
+            let item = newItems.first(where: {$0.1 == CGPoint(x: -19, y: 19)})
+            newItems.removeAll(where: {$0.1 == CGPoint(x: -19, y: 19)})
+            color = getColor(from: item?.0 ?? "white")
+            newItems.append((color+"VerticalHalf", CGPoint(x: -19, y: 0)))
+            
+        case CGPoint(x: 19, y: -19): // Пропущен правый нижний угол
+            let item = newItems.first(where: {$0.1 == CGPoint(x: 19, y: 19)})
+            newItems.removeAll(where: {$0.1 == CGPoint(x: 19, y: 19)})
+            color = getColor(from: item?.0 ?? "white")
+            newItems.append((color+"VerticalHalf", CGPoint(x: 19, y: 0)))
+        case CGPoint(x: 19, y: 19): // Пропущен правый верхний угол
+            let item = newItems.first(where: {$0.1 == CGPoint(x: 19, y: -19)})
+            newItems.removeAll(where: {$0.1 == CGPoint(x: 19, y: -19)})
+            color = getColor(from: item?.0 ?? "white")
+            newItems.append((color+"VerticalHalf", CGPoint(x: 19, y: 0)))
+        case CGPoint(x: -19, y: 19): // Пропущен левый верхний угол
+            let item = newItems.first(where: {$0.1 == CGPoint(x: -19, y: -19)})
+            newItems.removeAll(where: {$0.1 == CGPoint(x: -19, y: -19)})
+            color = getColor(from: item?.0 ?? "white")
+            newItems.append((color+"VerticalHalf", CGPoint(x: -19, y: 0)))
+        default:
+            newItems = items
+        }
+                            
+        return newItems
     }
 }
 

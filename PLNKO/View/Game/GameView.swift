@@ -1,15 +1,18 @@
 import SwiftUI
 import SpriteKit
-
 struct GameView: View {
     @Environment(\.presentationMode) var presentationMode
+    var sceneSize = CGSize(width: 343, height: SizeConverter.isSmallScreen ? 450 : 558)
+    @State private var isGameOver = false
+    @State private var scene: GameScene!
+    private let levelManager = LevelManager.shared
+    @State private var matchCount: [String: Int] = [:]
     
-    @State private var scene: GameScene = {
-        let scene = GameScene(size: CGSize(width: 343, height: 558))
-        scene.scaleMode = .aspectFill
-        return scene
-    }()
-    
+    // Текущие данные уровня
+    @State private var elements: [[[(String, CGPoint)]]] = []
+    @State private var gameBoardCells: [[Bool]] = []
+    @State private var goal: [String: Int] = [:]
+
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -61,20 +64,72 @@ struct GameView: View {
                     .zIndex(2)
                     .frame(maxHeight: 125)
                     
-                    Spacer(minLength: 100)
-                    SpriteView(scene: scene, options: [.allowsTransparency])
-                        .frame(width: 343, height: 558)
-                        .ignoresSafeArea()
-                        .background(.clear)
-                        .zIndex(3)
-                        .id(scene)
+                    GoalsView(goals: goal, matchCount: matchCount)
+                        .padding(.top, SizeConverter.isSmallScreen ? 5 : 20)
+                    
+                    if let scene = self.scene {
+                        SpriteView(scene: scene, options: [.allowsTransparency])
+                            .frame(width: 343, height:SizeConverter.isSmallScreen ? 450 : 558)
+                            .ignoresSafeArea()
+                            .background(.clear)
+                            .zIndex(3)
+                            .id(scene)
+                            .padding(.top, -2)
+                    } else {
+                        ProgressView("Загрузка уровня...")
+                            .progressViewStyle(CircularProgressViewStyle())
+                            .frame(width: 343, height: 558)
+                    }
                     
                     Spacer()
                 }
+                if isGameOver {
+                    GameOverView(onBack: {
+                        isGameOver = false
+                        reloadLevel()
+                    })
+                        .transition(.opacity) // Добавляем анимацию появления
+                        .zIndex(15)
+                }
             }
             .edgesIgnoringSafeArea(.all)
+            .navigationBarHidden(true)
+            .onAppear {
+                // Загружаем данные уровня
+                if let levelData = levelManager.getLevelData(levelNumber: 1) {
+                    self.elements = levelData.elements
+                    self.gameBoardCells = levelData.gameBoardCells
+                    self.goal = levelData.goal
+                    
+                    // Создаем экземпляр GameScene после загрузки данных
+                    self.scene = GameScene(size: sceneSize, goal: goal, elements: elements, gameBoardCells: gameBoardCells)
+                    self.scene?.scaleMode = .aspectFill
+                } else {
+                    print("Ошибка загрузки данных уровня!")
+                }
+                NotificationCenter.default.addObserver(forName: NSNotification.Name("MatchCountUpdated"), object: nil, queue: .main) { notification in
+                        if let updatedMatchCount = notification.object as? [String: Int] {
+                            self.matchCount = updatedMatchCount
+                        }
+                    }
+                NotificationCenter.default.addObserver(
+                    forName: NSNotification.Name("GameOver"),
+                    object: nil,
+                    queue: .main
+                ) { _ in
+                    self.isGameOver = true // Показываем GameOverView
+                }
+            }
+            .onDisappear {
+                    // Отписываемся от уведомлений при выходе из экрана
+                    NotificationCenter.default.removeObserver(self, name: NSNotification.Name("MatchCountUpdated"), object: nil)
+                }
         }
-        .navigationBarHidden(true)
+    }
+    
+    
+    func reloadLevel() {
+        self.scene = GameScene(size: sceneSize, goal: goal, elements: elements, gameBoardCells: gameBoardCells)
+        self.scene?.scaleMode = .aspectFill
     }
 }
-

@@ -9,10 +9,17 @@ class GameScene: SKScene {
     var elements: [[[(String, CGPoint)]]]
     var goal: [String: Int]
     var timerLabel: SKLabelNode!
-    private var isRemoveModeActive = false
-    private var remainingTime: Int = 100
+    
+    private var remainingTime: Int = 5
     private var timer: Timer?
     private var gameLogic = GameLogic()
+    var removeButton: SKSpriteNode!
+    var changeButton: SKSpriteNode!
+    
+    //boosts
+    private var isRemoveModeActive = false
+    private var isChangeModeActive = false
+    private var firstSelectedCell: (Int, Int)? = nil
     
     
     init(size: CGSize, goal: [String: Int], elements: [[[(String, CGPoint)]]], gameBoardCells: [[Bool]]) {
@@ -23,22 +30,36 @@ class GameScene: SKScene {
         self.gameRenderer = GameRenderer(gameLogic: gameLogic, isCellAvailable: gameBoardCells)
         super.init(size: size)
         backgroundColor = .clear
+        gameBoard.startImages[0] = gameBoard.getStartBlock()
+        gameBoard.startImages[1] = gameBoard.getStartBlock()
         addBackgroundImage()
         gameRenderer.setupGameBoard(on: self, gameBoard: gameBoard)
         setupStartBlocks()
         startTimer()
         addTimerLabel()
         setupRemoveButton()
+        setupChangeButton()
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
+    private func setupChangeButton() {
+        let multi = SizeConverter.isSmallScreen ? 0.7 : 1
+        changeButton = SKSpriteNode(imageNamed: "changeButton")
+        changeButton.size = CGSize(width: 65*multi, height: 72.22*multi)
+        changeButton.position = CGPoint(x: SizeConverter.isSmallScreen ? 35 : 80, y: SizeConverter.isSmallScreen ? 57 : 140)
+        changeButton.zPosition = 1
+        changeButton.name = "changeButton"
+        addChild(changeButton)
+    }
+    
     private func setupRemoveButton() {
-        let removeButton = SKSpriteNode(imageNamed: "removeButton")
-        removeButton.size = CGSize(width: 65, height: 72.22)
-        removeButton.position = CGPoint(x: size.width - 80, y: 140)
+        let multi = SizeConverter.isSmallScreen ? 0.7 : 1
+        removeButton = SKSpriteNode(imageNamed: "removeButton")
+        removeButton.size = CGSize(width: 65*multi, height: 72.22*multi)
+        removeButton.position = CGPoint(x: size.width - (SizeConverter.isSmallScreen ? 35 : 80), y: SizeConverter.isSmallScreen ? 57 : 140)
         removeButton.zPosition = 1
         removeButton.name = "removeButton"
         addChild(removeButton)
@@ -91,11 +112,11 @@ class GameScene: SKScene {
     private func setupStartBlocks() {
         let startBlockSize: CGFloat = 75
         let yOffset: CGFloat = startBlockSize / 2 + 20
-        let startXPositions = [startBlockSize / 2+40, size.width - startBlockSize / 2-40]
+        let startXPositions = [startBlockSize / 2 + (SizeConverter.isSmallScreen ? 65 : 40), size.width - startBlockSize / 2-(SizeConverter.isSmallScreen ? 65 : 40)]
 
         for (index, startX) in startXPositions.enumerated() {
             let block = SKSpriteNode(imageNamed: "startBlockImage")
-            block.size = CGSize(width: startBlockSize, height: startBlockSize)
+            block.size = CGSize(width: startBlockSize*1.3, height: startBlockSize*1.3)
             block.position = CGPoint(x: startX, y: yOffset)
             addChild(block)
 
@@ -117,15 +138,40 @@ class GameScene: SKScene {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
-        if let node = atPoint(location) as? SKSpriteNode, node.name == "removeButton" {
+        if let node = atPoint(location) as? SKSpriteNode, node.name == "removeButton" && !isChangeModeActive{
             isRemoveModeActive = true
             print("Активирован режим удаления!")
+            removeButton.setScale(1.2)
+            return
+        }
+        if let node = atPoint(location) as? SKSpriteNode, node.name == "changeButton"  && !isRemoveModeActive{
+            changeButton.setScale(1.2)
+            isChangeModeActive = true
+            firstSelectedCell = nil
+            print("Активирован режим замены!")
+            return
+        }
+        if isChangeModeActive {
+            if let (row, col) = gameRenderer.handleRemoveBoostTouch(location: location, gameBoard: gameBoard) {
+                if firstSelectedCell == nil {
+                    firstSelectedCell = (row, col)
+                    print("Первая клетка выбрана: \(firstSelectedCell!)")
+                } else {
+                    let secondSelectedCell = (row, col)
+                    print("Вторая клетка выбрана: \(secondSelectedCell)")
+                    swapCells(first: firstSelectedCell!, second: secondSelectedCell)
+                    isChangeModeActive = false // Отключаем режим замены
+                    firstSelectedCell = nil
+                    changeButton.setScale(1.0)
+                }
+            }
             return
         }
         if isRemoveModeActive {
             if let (row, col) = gameRenderer.handleRemoveBoostTouch(location: location, gameBoard: gameBoard) {
                 clearCell(at: (row, col))
                 isRemoveModeActive = false // Отключаем режим удаления после очистки клетки
+                removeButton.setScale(1.0)
             }
             return
         }
@@ -150,6 +196,32 @@ class GameScene: SKScene {
         }
     }
     
+    private func swapCells(first: (Int, Int), second: (Int, Int)) {
+       guard first != second else {
+           print("Нельзя выбрать одну и ту же клетку дважды!")
+           return
+       }
+
+       // Временно сохраняем содержимое первой клетки
+       let tempElements = gameBoard.elements[first.0][first.1]
+
+       // Меняем содержимое клеток местами
+       gameBoard.elements[first.0][first.1] = gameBoard.elements[second.0][second.1]
+       gameBoard.elements[second.0][second.1] = tempElements
+
+       // Обновляем графическое представление
+       gameRenderer.updateGameBoard(on: self, gameBoard: gameBoard)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            self.startMatchCycle(row: first.0, col: first.1, iteration: 0)
+            
+            if self.isGoalCompleted() {
+                self.endGame()
+            }
+        }
+
+       print("Содержимое клеток \(first) и \(second) было успешно поменяно местами!")
+   }
+    
     private func clearCell(at position: (Int, Int)) {
         print(position)
         guard !gameBoard.elements[position.0][position.1].isEmpty else {
@@ -159,8 +231,6 @@ class GameScene: SKScene {
         
         // Добавляем элементы в matchCount
         for element in gameBoard.elements[position.0][position.1] {
-            let color = gameLogic.getColor(from: element.0)
-            gameBoard.matchCount[color, default: 0] += 1
             gameBoard.removeElements(at: [(position.0, position.1, element.0)], gameLogic: gameLogic)
         }
 

@@ -2,27 +2,40 @@ import SwiftUI
 
 struct GameOverView: View {
     
-    var onBack: () -> Void
+    var onRestart: () -> Void
     
     var body: some View {
         ZStack {
-            Color.black.opacity(0.8) // Полупрозрачный фон
-                .edgesIgnoringSafeArea(.all)
-            
-            VStack {
-                Text("Вы выиграли!")
-                    .font(.largeTitle)
-                    .foregroundColor(.white)
-                
-                Button("Начать заново") {
-                    // Логика для начала новой игры
-                    onBack()
+            Color(.black)
+                .opacity(0.7)
+            ZStack(alignment: .bottom) {
+                Image("gameOverBack")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 342, height: 368)
+                HStack(alignment: .center) {
+                    Button {
+                        print()
+                    } label: {
+                        Image("backToHomeButton")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 62, height: 51.88)
+                    }
+                    Button {
+                        onRestart()
+                    } label: {
+                        Image("restartLevelButton")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 62, height: 51.88)
+                    }
+//                    .frame(width: 180, height: 60)
+                    .padding(.bottom, 25)
                 }
-                .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(10)
             }
+            .frame(width: 342, height: 368)
         }
+        
     }
 }

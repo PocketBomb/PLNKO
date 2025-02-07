@@ -71,7 +71,6 @@ class GameRenderer {
     }
     
     func handleRemoveBoostTouch(location: CGPoint, gameBoard: GameBoard) -> (Int, Int)? {
-        print(location)
         let startX = (gameBoard.size.width - 249) / 2
         let startY = gameBoard.size.height - 60
         

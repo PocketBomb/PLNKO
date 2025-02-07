@@ -2,6 +2,7 @@ import SwiftUI
 import SpriteKit
 struct GameView: View {
     @Environment(\.presentationMode) var presentationMode
+    var currentLevel = 10
     var sceneSize = CGSize(width: 343, height: SizeConverter.isSmallScreen ? 450 : 558)
     @State private var isGameOver = false
     @State private var scene: GameScene!
@@ -55,14 +56,14 @@ struct GameView: View {
                             .padding(.horizontal, 16)
                             .frame(height: SizeConverter.isSmallScreen ? 107 : 115, alignment: .bottom)
                             
-                            Image("level1Label")
+                            Image("level\(currentLevel)Label")
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 133, alignment: .bottom)
                         }
                     }
                     .zIndex(2)
-                    .frame(maxHeight: 125)
+                    .frame(maxHeight: SizeConverter.isSmallScreen ? 115 : 125)
                     
                     GoalsView(goals: goal, matchCount: matchCount)
                         .padding(.top, SizeConverter.isSmallScreen ? 5 : 20)
@@ -84,7 +85,7 @@ struct GameView: View {
                     Spacer()
                 }
                 if isGameOver {
-                    GameOverView(onBack: {
+                    GameOverView(onRestart: {
                         isGameOver = false
                         reloadLevel()
                     })
@@ -96,7 +97,7 @@ struct GameView: View {
             .navigationBarHidden(true)
             .onAppear {
                 // Загружаем данные уровня
-                if let levelData = levelManager.getLevelData(levelNumber: 1) {
+                if let levelData = levelManager.getLevelData(levelNumber: currentLevel) {
                     self.elements = levelData.elements
                     self.gameBoardCells = levelData.gameBoardCells
                     self.goal = levelData.goal

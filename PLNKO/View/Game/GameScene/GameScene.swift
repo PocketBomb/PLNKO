@@ -10,8 +10,8 @@ class GameScene: SKScene {
     var goal: [String: Int]
     var timerLabel: SKLabelNode!
     
-    private var remainingTime: Int = 5
-    private var timer: Timer?
+    private var remainingTime: Int = 90
+    var timer: Timer?
     private var gameLogic = GameLogic()
     var removeButton: SKSpriteNode!
     var changeButton: SKSpriteNode!
@@ -47,9 +47,13 @@ class GameScene: SKScene {
     
     private func setupChangeButton() {
         let multi = SizeConverter.isSmallScreen ? 0.7 : 1
-        changeButton = SKSpriteNode(imageNamed: "changeButton")
+        if LightningManager.shared.currentLightnings < 300 {
+            changeButton = SKSpriteNode(imageNamed: "changeButtonNoMoney")
+        } else {
+            changeButton = SKSpriteNode(imageNamed: "changeButton")
+        }
         changeButton.size = CGSize(width: 65*multi, height: 72.22*multi)
-        changeButton.position = CGPoint(x: SizeConverter.isSmallScreen ? 35 : 80, y: SizeConverter.isSmallScreen ? 57 : 140)
+        changeButton.position = CGPoint(x: SizeConverter.isSmallScreen ? 35 : 50, y: SizeConverter.isSmallScreen ? 57 : 140)
         changeButton.zPosition = 1
         changeButton.name = "changeButton"
         addChild(changeButton)
@@ -57,15 +61,19 @@ class GameScene: SKScene {
     
     private func setupRemoveButton() {
         let multi = SizeConverter.isSmallScreen ? 0.7 : 1
-        removeButton = SKSpriteNode(imageNamed: "removeButton")
+        if LightningManager.shared.currentLightnings < 500 {
+            removeButton = SKSpriteNode(imageNamed: "removeButtonNoMoney")
+        } else {
+            removeButton = SKSpriteNode(imageNamed: "removeButton")
+        }
         removeButton.size = CGSize(width: 65*multi, height: 72.22*multi)
-        removeButton.position = CGPoint(x: size.width - (SizeConverter.isSmallScreen ? 35 : 80), y: SizeConverter.isSmallScreen ? 57 : 140)
+        removeButton.position = CGPoint(x: size.width - (SizeConverter.isSmallScreen ? 35 : 50), y: SizeConverter.isSmallScreen ? 57 : 140)
         removeButton.zPosition = 1
         removeButton.name = "removeButton"
         addChild(removeButton)
     }
     
-    private func startTimer() {
+    public func startTimer() {
             // Создаем таймер, который уменьшает оставшееся время каждую секунду
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
@@ -138,30 +146,39 @@ class GameScene: SKScene {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
-        if let node = atPoint(location) as? SKSpriteNode, node.name == "removeButton" && !isChangeModeActive{
+        if let node = atPoint(location) as? SKSpriteNode, node.name == "removeButton" && !isChangeModeActive && LightningManager.shared.currentLightnings >= 500 {
+            let _ = LightningManager.shared.subtractLightnings(500)
+            if LightningManager.shared.currentLightnings < 300 {
+                changeButton.texture = SKTexture(imageNamed: "changeButtonNoMoney")
+            }
             isRemoveModeActive = true
             print("Активирован режим удаления!")
             removeButton.setScale(1.2)
             return
         }
-        if let node = atPoint(location) as? SKSpriteNode, node.name == "changeButton"  && !isRemoveModeActive{
+        if let node = atPoint(location) as? SKSpriteNode, node.name == "changeButton"  && !isRemoveModeActive && LightningManager.shared.currentLightnings >= 300{
+            let _ = LightningManager.shared.subtractLightnings(300)
+            if LightningManager.shared.currentLightnings < 500 {
+                removeButton.texture = SKTexture(imageNamed: "removeButtonNoMoney")
+            }
             changeButton.setScale(1.2)
             isChangeModeActive = true
             firstSelectedCell = nil
-            print("Активирован режим замены!")
             return
         }
         if isChangeModeActive {
             if let (row, col) = gameRenderer.handleRemoveBoostTouch(location: location, gameBoard: gameBoard) {
                 if firstSelectedCell == nil {
                     firstSelectedCell = (row, col)
-                    print("Первая клетка выбрана: \(firstSelectedCell!)")
                 } else {
                     let secondSelectedCell = (row, col)
                     print("Вторая клетка выбрана: \(secondSelectedCell)")
                     swapCells(first: firstSelectedCell!, second: secondSelectedCell)
                     isChangeModeActive = false // Отключаем режим замены
                     firstSelectedCell = nil
+                    if LightningManager.shared.currentLightnings < 300 {
+                        changeButton.texture = SKTexture(imageNamed: "changeButtonNoMoney")
+                    }
                     changeButton.setScale(1.0)
                 }
             }
@@ -171,6 +188,9 @@ class GameScene: SKScene {
             if let (row, col) = gameRenderer.handleRemoveBoostTouch(location: location, gameBoard: gameBoard) {
                 clearCell(at: (row, col))
                 isRemoveModeActive = false // Отключаем режим удаления после очистки клетки
+                if LightningManager.shared.currentLightnings < 500 {
+                    removeButton.texture = SKTexture(imageNamed: "removeButtonNoMoney")
+                }
                 removeButton.setScale(1.0)
             }
             return
@@ -237,7 +257,9 @@ class GameScene: SKScene {
 
         // Обновляем графическое представление
         gameRenderer.updateGameBoard(on: self, gameBoard: gameBoard)
-
+        if self.isGoalCompleted() {
+            self.endGame()
+        }
         print("Клетка очищена! Текущее состояние matchCount: \(gameBoard.matchCount)")
     }
     
@@ -272,7 +294,6 @@ class GameScene: SKScene {
     private func endGame() {
         print("Цель достигнута! Игра завершена!")
 
-        // Очищаем игровое поле
         for row in 0..<gameBoard.elements.count {
             for col in 0..<gameBoard.elements[row].count {
                 gameBoard.elementNodes[row][col].forEach { $0?.removeFromParent() }
@@ -281,11 +302,10 @@ class GameScene: SKScene {
             }
         }
 
-
-        // Останавливаем возможность дальнейших ходов
         self.isPaused = true
         gameBoard.deselectAll()
-//        NotificationCenter.default.post(name: NSNotification.Name("ShowGameOver"), object: nil)
+        LightningManager.shared.addLightnings(100)
+        NotificationCenter.default.post(name: NSNotification.Name("UserWin"), object: nil)
     }
     
     private func startMatchCycle(row: Int, col: Int, iteration: Int) {

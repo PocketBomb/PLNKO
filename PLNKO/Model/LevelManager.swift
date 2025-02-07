@@ -1,19 +1,10 @@
 import Foundation
 
-class LevelManager {
+class LevelManager: ObservableObject {
     static let shared = LevelManager() // Singleton
     
     private let userDefaults = UserDefaults.standard
     
-    // Текущий уровень
-    var currentLevel: Int {
-        get {
-            return userDefaults.integer(forKey: "currentLevel")
-        }
-        set {
-            userDefaults.set(newValue, forKey: "currentLevel")
-        }
-    }
     
     // Максимальный открытый уровень
     var maxUnlockedLevel: Int {
@@ -279,13 +270,9 @@ class LevelManager {
     }
     
     // Метод для перехода к следующему уровню
-    func goToNextLevel() {
-        let nextLevel = currentLevel + 1
-        if nextLevel <= totalLevels {
-            currentLevel = nextLevel
-            maxUnlockedLevel = nextLevel
-        } else {
-            print("Это последний уровень!")
+    func goToNextLevel(level: Int) {
+        if level < maxUnlockedLevel {
+            maxUnlockedLevel = level
         }
     }
 }

@@ -2,11 +2,15 @@ import SwiftUI
 import SpriteKit
 struct GameView: View {
     @Environment(\.presentationMode) var presentationMode
-    var currentLevel = 10
+    @StateObject var levelManager = LevelManager.shared
+    
+    @State var currentLevel: Int
     var sceneSize = CGSize(width: 343, height: SizeConverter.isSmallScreen ? 450 : 558)
     @State private var isGameOver = false
+    @State private var isUserWin = false
+    @State private var isPaused = false
+    @State private var isInfo = false
     @State private var scene: GameScene!
-    private let levelManager = LevelManager.shared
     @State private var matchCount: [String: Int] = [:]
     
     // Текущие данные уровня
@@ -46,7 +50,9 @@ struct GameView: View {
                                 
                                 Spacer()
                                 
-                                Button(action: {}) {
+                                Button(action: {
+                                    isPaused = true
+                                }) {
                                     Image(Resources.Game.Buttons.pauseButton)
                                         .resizable()
                                         .scaledToFit()
@@ -84,18 +90,63 @@ struct GameView: View {
                     
                     Spacer()
                 }
+                SpeedView()
+                    .position(x: geometry.size.width - 55,
+                              y: geometry.size.height * (1.4/8) + (SizeConverter.isSmallScreen ? 35 : 20))
                 if isGameOver {
                     GameOverView(onRestart: {
                         isGameOver = false
                         reloadLevel()
+                    }, onHome: {
+                        isGameOver = false
+                        presentationMode.wrappedValue.dismiss()
                     })
-                        .transition(.opacity) // Добавляем анимацию появления
-                        .zIndex(15)
+                }
+                if isUserWin {
+                    YouWinView(onRestart: {
+                        isUserWin =  false
+                        if currentLevel < 12 {
+                            levelManager.goToNextLevel(level: currentLevel+1)
+                        } else {
+                            levelManager.goToNextLevel(level: 12)
+                        }
+                        reloadLevel()
+                    }, onHome: {
+                        isUserWin =  false
+                        if currentLevel < 12 {
+                            levelManager.goToNextLevel(level: currentLevel+1)
+                        } else {
+                            levelManager.goToNextLevel(level: 12)
+                        }
+                        presentationMode.wrappedValue.dismiss()
+                    }, onNextLevel: {
+                        isUserWin =  false
+                        loadNextLevel()
+                    })
+                }
+                if isPaused {
+                    PauseView(onCancel: {
+                        isPaused = false
+                        scene.isPaused = false
+                        scene.startTimer()
+                    }, onHome: {
+                        isPaused = false
+                        presentationMode.wrappedValue.dismiss()
+                    }, onInfo: {
+                        isInfo = true
+                    })
+                }
+                if isInfo {
+                    PauseInfoView(onBack: {
+                        isInfo = false
+                    })
+                        .edgesIgnoringSafeArea(.all)
                 }
             }
             .edgesIgnoringSafeArea(.all)
             .navigationBarHidden(true)
             .onAppear {
+                LightningManager.shared.addLightnings(500)
                 // Загружаем данные уровня
                 if let levelData = levelManager.getLevelData(levelNumber: currentLevel) {
                     self.elements = levelData.elements
@@ -120,11 +171,26 @@ struct GameView: View {
                 ) { _ in
                     self.isGameOver = true // Показываем GameOverView
                 }
+                
+                NotificationCenter.default.addObserver(
+                    forName: NSNotification.Name("UserWin"),
+                    object: nil,
+                    queue: .main
+                ) { _ in
+                    self.isUserWin = true // Показываем YouWinView
+                }
             }
             .onDisappear {
-                    // Отписываемся от уведомлений при выходе из экрана
-                    NotificationCenter.default.removeObserver(self, name: NSNotification.Name("MatchCountUpdated"), object: nil)
+                NotificationCenter.default.removeObserver(self, name: NSNotification.Name("MatchCountUpdated"), object: nil)
+                NotificationCenter.default.removeObserver(self, name: NSNotification.Name("GameOver"), object: nil)
+                NotificationCenter.default.removeObserver(self, name: NSNotification.Name("UserWin"), object: nil)
+            }
+            .onChange(of: isPaused) { newValue in
+                if newValue == true {
+                    scene?.timer?.invalidate()
                 }
+                scene?.isPaused = newValue
+            }
         }
     }
     
@@ -132,5 +198,26 @@ struct GameView: View {
     func reloadLevel() {
         self.scene = GameScene(size: sceneSize, goal: goal, elements: elements, gameBoardCells: gameBoardCells)
         self.scene?.scaleMode = .aspectFill
+    }
+    
+    func loadNextLevel() {
+        self.matchCount = [:]
+        if currentLevel != 12 {
+            currentLevel += 1
+            levelManager.goToNextLevel(level: currentLevel)
+        } else {
+            currentLevel = 1
+            levelManager.goToNextLevel(level: 12)
+        }
+        if let levelData = levelManager.getLevelData(levelNumber: currentLevel) {
+            self.elements = levelData.elements
+            self.gameBoardCells = levelData.gameBoardCells
+            self.goal = levelData.goal
+            // Создаем экземпляр GameScene после загрузки данных
+            self.scene = GameScene(size: sceneSize, goal: goal, elements: elements, gameBoardCells: gameBoardCells)
+            self.scene?.scaleMode = .aspectFill
+        } else {
+            print("Ошибка загрузки данных уровня!")
+        }
     }
 }

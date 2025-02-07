@@ -10,6 +10,9 @@ struct MainView: View {
         (0.16, 0.45), (0.34, 0.42), (0.38, 0.35)
     ]
     
+    @State var isGame = false
+    var selectedLevel = 1
+    
     var body: some View {
         NavigationStack {
             GeometryReader { geometry in
@@ -81,10 +84,13 @@ struct MainView: View {
                     // Размещение кнопок уровней
                     ForEach(0..<levels.count, id: \ .self) { index in
                         Button(action: {
-                            print("Level \(index + 1) tapped")
+                            LevelManager.shared.maxUnlockedLevel-1 < index {
+                                selectedLevel = index+1
+                                isGame = true
+                            }
                         }) {
                             ZStack(alignment: .center) {
-                                Image("levelBlocked")
+                                Image(LevelManager.shared.maxUnlockedLevel-1 < index ? "levelBlocked" :"levelAvailable")
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 62, height: 53.5, alignment: .center)
@@ -100,6 +106,10 @@ struct MainView: View {
                     }
                 }
                 .edgesIgnoringSafeArea(.all)
+                if isGame {
+                    GameView(currentLevel: selectedLevel)
+                        .edgesIgnoringSafeArea(.all)
+                }
             }
         }
         .navigationBarHidden(true)

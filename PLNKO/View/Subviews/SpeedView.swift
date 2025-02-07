@@ -2,6 +2,9 @@
 import SwiftUI
 
 struct SpeedView: View {
+    
+    @StateObject private var lightningManager = LightningManager.shared
+    
     var body: some View {
         ZStack(alignment: .center) {
             Image("speedBackground")
@@ -9,7 +12,7 @@ struct SpeedView: View {
                 .scaledToFit()
                 .frame(width: 110)
             
-            Text("150")
+            Text("\(lightningManager.currentLightnings)")
                 .font(.custom(Resources.Fonts.jomhuria, size: 37))
                 .foregroundStyle(.white)
                 .padding(.leading, 37)

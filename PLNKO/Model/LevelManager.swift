@@ -271,7 +271,7 @@ class LevelManager: ObservableObject {
     
     // Метод для перехода к следующему уровню
     func goToNextLevel(level: Int) {
-        if level < maxUnlockedLevel {
+        if level > maxUnlockedLevel {
             maxUnlockedLevel = level
         }
     }

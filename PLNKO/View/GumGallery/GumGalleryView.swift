@@ -58,7 +58,7 @@ struct GumGalleryView: View {
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     HStack(spacing: spacing) {
                                         ForEach(0..<characterCount, id: \.self) { index in
-                                            let isOpen = index < LevelManager.shared.maxUnlockedLevel
+                                            let isOpen = index+1 < LevelManager.shared.maxUnlockedLevel
                                             let imageName = isOpen ? "characterLevel\(index + 1)" : "characterLevel\(index + 1)Closed"
                                             Image(imageName)
                                                 .resizable()
@@ -121,7 +121,7 @@ struct GumGalleryView: View {
                         .zIndex(1)
                         .padding(.top, -80)
                         
-                        if currentIndex >= LevelManager.shared.maxUnlockedLevel {
+                        if currentIndex+1 >= LevelManager.shared.maxUnlockedLevel {
                             Text("Complete Level \(currentIndex + 1)\nto give the character gum.")
                                 .font(.custom(Resources.Fonts.jomhuria, size: 27))
                                 .foregroundStyle(.white.opacity(0.6))
@@ -137,7 +137,7 @@ struct GumGalleryView: View {
                                 HStack(spacing: horizontalSpacing) {
                                     ForEach(0..<3) { column in // 3 ячейки в строке
                                         let index = row * 3 + column
-                                        let isOpen = index <= LevelManager.shared.maxUnlockedLevel
+                                        let isOpen = index+1 < LevelManager.shared.maxUnlockedLevel
                                         let imageName = isOpen ? "characterCellLevel\(index + 1)" : "characterCellLevel\(index + 1)Closed"
                                         
                                         Button(action: {
@@ -153,7 +153,7 @@ struct GumGalleryView: View {
                                 }
                             }
                         }
-                        .padding(.top, currentIndex >= LevelManager.shared.maxUnlockedLevel ? -28 : 50 ) // Отступ сверху для коллекции
+                        .padding(.top, currentIndex+1 >= LevelManager.shared.maxUnlockedLevel ? -28 : 50 ) // Отступ сверху для коллекции
                         .padding(.horizontal, (geometry.size.width - (cellSize.width * 3 + horizontalSpacing * 2)) / 2)
                         Spacer(minLength: 150)
                     }

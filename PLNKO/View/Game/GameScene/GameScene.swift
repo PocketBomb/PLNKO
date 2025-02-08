@@ -8,6 +8,7 @@ class GameScene: SKScene {
     var gameBoardCells: [[Bool]]
     var elements: [[[(String, CGPoint)]]]
     var goal: [String: Int]
+    var currentLevel: Int
     var timerLabel: SKLabelNode!
     
     private var remainingTime: Int = 90
@@ -22,12 +23,13 @@ class GameScene: SKScene {
     private var firstSelectedCell: (Int, Int)? = nil
     
     
-    init(size: CGSize, goal: [String: Int], elements: [[[(String, CGPoint)]]], gameBoardCells: [[Bool]]) {
+    init(size: CGSize, goal: [String: Int], elements: [[[(String, CGPoint)]]], gameBoardCells: [[Bool]], currentLevel: Int) {
         self.goal = goal
         self.elements = elements
         self.gameBoardCells = gameBoardCells
         self.gameBoard = GameBoard(size: size, elements: elements, isCellAvailable: gameBoardCells)
         self.gameRenderer = GameRenderer(gameLogic: gameLogic, isCellAvailable: gameBoardCells)
+        self.currentLevel = currentLevel
         super.init(size: size)
         backgroundColor = .clear
         gameBoard.startImages[0] = gameBoard.getStartBlock()
@@ -305,6 +307,7 @@ class GameScene: SKScene {
         self.isPaused = true
         gameBoard.deselectAll()
         LightningManager.shared.addLightnings(100)
+        BestResultManager.shared.updateBestResult(for: currentLevel, with: "\(90-remainingTime)")
         NotificationCenter.default.post(name: NSNotification.Name("UserWin"), object: nil)
     }
     

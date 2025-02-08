@@ -69,7 +69,7 @@ struct GameView: View {
                         }
                     }
                     .zIndex(2)
-                    .frame(maxHeight: SizeConverter.isSmallScreen ? 115 : 125)
+//                    .frame(maxHeight: SizeConverter.isSmallScreen ? 115 : 125)
                     
                     GoalsView(goals: goal, matchCount: matchCount)
                         .padding(.top, SizeConverter.isSmallScreen ? 5 : 20)
@@ -146,7 +146,6 @@ struct GameView: View {
             .edgesIgnoringSafeArea(.all)
             .navigationBarHidden(true)
             .onAppear {
-                LightningManager.shared.addLightnings(500)
                 // Загружаем данные уровня
                 if let levelData = levelManager.getLevelData(levelNumber: currentLevel) {
                     self.elements = levelData.elements
@@ -154,7 +153,7 @@ struct GameView: View {
                     self.goal = levelData.goal
                     
                     // Создаем экземпляр GameScene после загрузки данных
-                    self.scene = GameScene(size: sceneSize, goal: goal, elements: elements, gameBoardCells: gameBoardCells)
+                    self.scene = GameScene(size: sceneSize, goal: goal, elements: elements, gameBoardCells: gameBoardCells, currentLevel: currentLevel)
                     self.scene?.scaleMode = .aspectFill
                 } else {
                     print("Ошибка загрузки данных уровня!")
@@ -196,7 +195,8 @@ struct GameView: View {
     
     
     func reloadLevel() {
-        self.scene = GameScene(size: sceneSize, goal: goal, elements: elements, gameBoardCells: gameBoardCells)
+        self.scene = GameScene(size: sceneSize, goal: goal, elements: elements, gameBoardCells: gameBoardCells, currentLevel: currentLevel)
+        
         self.scene?.scaleMode = .aspectFill
     }
     
@@ -204,7 +204,9 @@ struct GameView: View {
         self.matchCount = [:]
         if currentLevel != 12 {
             currentLevel += 1
+            
             levelManager.goToNextLevel(level: currentLevel)
+            print(levelManager.maxUnlockedLevel)
         } else {
             currentLevel = 1
             levelManager.goToNextLevel(level: 12)
@@ -214,7 +216,7 @@ struct GameView: View {
             self.gameBoardCells = levelData.gameBoardCells
             self.goal = levelData.goal
             // Создаем экземпляр GameScene после загрузки данных
-            self.scene = GameScene(size: sceneSize, goal: goal, elements: elements, gameBoardCells: gameBoardCells)
+            self.scene = GameScene(size: sceneSize, goal: goal, elements: elements, gameBoardCells: gameBoardCells, currentLevel: currentLevel)
             self.scene?.scaleMode = .aspectFill
         } else {
             print("Ошибка загрузки данных уровня!")

@@ -179,6 +179,14 @@ class GameBoard {
     }
 
     func removeElements(at positions: [(Int, Int, String)], gameLogic: GameLogic) {
+        if AchievementsManager.shared.claiming(index: 9) {
+            NotificationCenter.default.post(name: NSNotification.Name("AchievementClaimed"), object: 9)
+        }
+        if positions.count == 3 {
+            if AchievementsManager.shared.claiming(index: 7) {
+                NotificationCenter.default.post(name: NSNotification.Name("AchievementClaimed"), object: 7)
+            }
+        }
         for (row, col, name) in positions {
             if let index = elements[row][col].firstIndex(where: { $0.0 == name }) {
                 let color = gameLogic.getColor(from: name)

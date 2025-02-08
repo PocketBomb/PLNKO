@@ -89,6 +89,7 @@ struct LevelPreview: View {
                 }
                 .padding(.bottom, 40)
             }
+            .padding(.bottom, 100)
             .onAppear {
                 let levelData = LevelManager.shared.getLevelData(levelNumber: currentLevel)
                 goals = levelData?.goal ?? [:]

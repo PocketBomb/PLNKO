@@ -7,16 +7,21 @@ class LevelManager: ObservableObject {
     
     
     // Максимальный открытый уровень
-    var maxUnlockedLevel: Int {
-        get {
-            return userDefaults.integer(forKey: "maxUnlockedLevel")
-        }
-        set {
-            if newValue > maxUnlockedLevel && newValue <= totalLevels {
-                userDefaults.set(newValue, forKey: "maxUnlockedLevel")
+//    var maxUnlockedLevel: Int {
+//        get {
+//            return userDefaults.integer(forKey: "maxUnlockedLevel")
+//        }
+//        set {
+//            if newValue > maxUnlockedLevel && newValue <= totalLevels {
+//                userDefaults.set(newValue, forKey: "maxUnlockedLevel")
+//            }
+//        }
+//    }
+    @Published var maxUnlockedLevel: Int {
+            didSet {
+                userDefaults.set(maxUnlockedLevel, forKey: "maxUnlockedLevel")
             }
         }
-    }
     
     // Общее количество уровней
     let totalLevels = 12
@@ -244,6 +249,11 @@ class LevelManager: ObservableObject {
     
     // Приватный инициализатор для Singleton
     private init() {
+    
+        if userDefaults.integer(forKey: "maxUnlockedLevel") == 0 {
+            userDefaults.set(1, forKey: "maxUnlockedLevel")
+        }
+        self.maxUnlockedLevel = userDefaults.integer(forKey: "maxUnlockedLevel")
         // Инициализируем начальные значения
         if userDefaults.integer(forKey: "currentLevel") == 0 {
             userDefaults.set(1, forKey: "currentLevel") // Начинаем с первого уровня

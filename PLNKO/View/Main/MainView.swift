@@ -124,7 +124,6 @@ struct MainView: View {
                         }, onExit: {
                             isLevelPreview = false
                         })
-                        .padding(.bottom, 100)
                         .zIndex(20)
                     }
                 }

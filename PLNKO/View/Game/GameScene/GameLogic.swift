@@ -4,7 +4,7 @@ import SpriteKit
 class GameLogic {
     
     func placeElement(on gameBoard: GameBoard, at position: (Int, Int), scene: GameScene) {
-        gameBoard.placeElement(at: position, scene: scene)
+        let _ = gameBoard.placeElement(at: position, scene: scene)
     }
     
     func hasMatches(on gameBoard: GameBoard) -> Bool {
@@ -291,7 +291,7 @@ class GameLogic {
         var newItems:[(String, CGPoint)] = []
         let item = items.first!
         let color = getColor(from: item.0)
-        newItems.append((color+"HorizontalHalf", CGPoint(x: 0, y: item.1.y)))
+        newItems.append((color+"Square", CGPoint(x: 0, y: 0)))
         return newItems
     }
     

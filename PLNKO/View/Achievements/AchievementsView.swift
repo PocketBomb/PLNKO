@@ -4,6 +4,7 @@ import SwiftUI
 struct AchievementsView: View {
     
     @Environment(\.presentationMode) var presentationMode
+    @StateObject var achievementsManager = AchievementsManager.shared
     
     var body: some View {
         GeometryReader { geometry in
@@ -43,8 +44,20 @@ struct AchievementsView: View {
                     }
                     .zIndex(10)
                     .frame(maxHeight: 140)
-                    
-                    Spacer()
+                    // Список ачивок
+                    ScrollView {
+                        VStack(spacing: 10) {
+                            ForEach(Array(achievementsManager.achievements.enumerated()), id: \.offset) { index, achievement in
+                                Image(achievement.isClaimed ? "achievementImage\(index)" : "achievementImage\(index)NotCompleted")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 365.5, height: 114)
+                            }
+                            Spacer(minLength: 140)
+                        }
+                        .padding(.top, 20)
+                    }
+                    .scrollIndicators(.hidden)
                 }
             }
             .edgesIgnoringSafeArea(.all)

@@ -79,7 +79,7 @@ class GameScene: SKScene {
             // Создаем таймер, который уменьшает оставшееся время каждую секунду
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            
+            print(remainingTime)
             if self.remainingTime > 0 {
                 self.remainingTime -= 1
                 self.updateTimerLabel()
@@ -305,10 +305,50 @@ class GameScene: SKScene {
         }
 
         self.isPaused = true
+        timer?.invalidate()
         gameBoard.deselectAll()
         LightningManager.shared.addLightnings(100)
         BestResultManager.shared.updateBestResult(for: currentLevel, with: "\(90-remainingTime)")
-        NotificationCenter.default.post(name: NSNotification.Name("UserWin"), object: nil)
+        
+        if 90 - remainingTime < 30 {
+            if AchievementsManager.shared.claiming(index: 6) {
+                NotificationCenter.default.post(name: NSNotification.Name("AchievementClaimed"), object: 6)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    NotificationCenter.default.post(name: NSNotification.Name("UserWin"), object: nil)
+                }
+            } else {
+                NotificationCenter.default.post(name: NSNotification.Name("UserWin"), object: nil)
+            }
+        } else if currentLevel == 1{
+            if AchievementsManager.shared.claiming(index: 0) {
+                NotificationCenter.default.post(name: NSNotification.Name("AchievementClaimed"), object: 0)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    NotificationCenter.default.post(name: NSNotification.Name("UserWin"), object: nil)
+                }
+            } else {
+                NotificationCenter.default.post(name: NSNotification.Name("UserWin"), object: nil)
+            }
+        } else if currentLevel == 7 {
+            if AchievementsManager.shared.claiming(index: 1) {
+                NotificationCenter.default.post(name: NSNotification.Name("AchievementClaimed"), object: 1)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    NotificationCenter.default.post(name: NSNotification.Name("UserWin"), object: nil)
+                }
+            } else {
+                NotificationCenter.default.post(name: NSNotification.Name("UserWin"), object: nil)
+            }
+        } else if currentLevel == 12 {
+            if AchievementsManager.shared.claiming(index: 2) {
+                NotificationCenter.default.post(name: NSNotification.Name("AchievementClaimed"), object: 2)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    NotificationCenter.default.post(name: NSNotification.Name("UserWin"), object: nil)
+                }
+            } else {
+                NotificationCenter.default.post(name: NSNotification.Name("UserWin"), object: nil)
+            }
+        } else {
+            NotificationCenter.default.post(name: NSNotification.Name("UserWin"), object: nil)
+        }
     }
     
     private func startMatchCycle(row: Int, col: Int, iteration: Int) {

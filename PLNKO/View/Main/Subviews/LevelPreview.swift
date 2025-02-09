@@ -72,7 +72,7 @@ struct LevelPreview: View {
                         .font(.custom(Resources.Fonts.jomhuria, size: 52))
                         .foregroundStyle(Color(red: 251/255, green: 193/255, blue: 23/255))
                         .multilineTextAlignment(.center)
-                    CustomTextShadow2(text: "\(bestResultManager.getBestResult(for: currentLevel))s", width: 2, color: Color(red: 92/255, green: 8/255, blue: 146/255))
+                    CustomTextShadow2(text:bestResultManager.getBestResult(for: currentLevel) == "None" ? "None": "\(bestResultManager.getBestResult(for: currentLevel))s", width: 2, color: Color(red: 92/255, green: 8/255, blue: 146/255))
                         .font(.custom(Resources.Fonts.jomhuria, size: 52))
                         .foregroundStyle(Color(red: 251/255, green: 193/255, blue: 23/255))
                         .multilineTextAlignment(.center)

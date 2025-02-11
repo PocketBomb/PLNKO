@@ -11,7 +11,8 @@ class GameScene: SKScene {
     var currentLevel: Int
     var timerLabel: SKLabelNode!
     
-    private var remainingTime: Int = 90
+    private var remainingTime: Int
+    var timeOfLevel: Int
     var timer: Timer?
     private var gameLogic = GameLogic()
     var removeButton: SKSpriteNode!
@@ -30,7 +31,32 @@ class GameScene: SKScene {
         self.gameBoard = GameBoard(size: size, elements: elements, isCellAvailable: gameBoardCells)
         self.gameRenderer = GameRenderer(gameLogic: gameLogic, isCellAvailable: gameBoardCells)
         self.currentLevel = currentLevel
+        if currentLevel <= 2 {
+            self.remainingTime = 90
+            self.timeOfLevel = 90
+        } else if currentLevel == 3 {
+            self.remainingTime = 150
+            self.timeOfLevel = 150
+        } else if currentLevel > 3 && currentLevel < 8 {
+            self.remainingTime = 180
+            self.timeOfLevel = 180
+        } else if currentLevel > 7 && currentLevel < 11 {
+            self.remainingTime = 210
+            self.timeOfLevel = 210
+        } else {
+            self.remainingTime = 230
+            self.timeOfLevel = 230
+        }
         super.init(size: size)
+        backgroundColor = .clear
+        configure()
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func configure() {
         backgroundColor = .clear
         gameBoard.startImages[0] = gameBoard.getStartBlock()
         gameBoard.startImages[1] = gameBoard.getStartBlock()
@@ -41,10 +67,6 @@ class GameScene: SKScene {
         addTimerLabel()
         setupRemoveButton()
         setupChangeButton()
-    }
-
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
     }
     
     private func setupChangeButton() {
@@ -149,23 +171,33 @@ class GameScene: SKScene {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
         if let node = atPoint(location) as? SKSpriteNode, node.name == "removeButton" && !isChangeModeActive && LightningManager.shared.currentLightnings >= 500 {
-            let _ = LightningManager.shared.subtractLightnings(500)
-            if LightningManager.shared.currentLightnings < 300 {
-                changeButton.texture = SKTexture(imageNamed: "changeButtonNoMoney")
+            if isRemoveModeActive {
+                removeButton.texture = SKTexture(imageNamed: "removeButton")
+                isRemoveModeActive = false
+                print("Активирован режим удаления!")
+                removeButton.setScale(1.0)
+            } else {
+                removeButton.texture = SKTexture(imageNamed: "removeButtonSelected")
+                isRemoveModeActive = true
+                print("Активирован режим удаления!")
+                removeButton.setScale(1.2)
             }
-            isRemoveModeActive = true
-            print("Активирован режим удаления!")
-            removeButton.setScale(1.2)
             return
         }
         if let node = atPoint(location) as? SKSpriteNode, node.name == "changeButton"  && !isRemoveModeActive && LightningManager.shared.currentLightnings >= 300{
-            let _ = LightningManager.shared.subtractLightnings(300)
-            if LightningManager.shared.currentLightnings < 500 {
-                removeButton.texture = SKTexture(imageNamed: "removeButtonNoMoney")
+            if isChangeModeActive {
+                changeButton.texture = SKTexture(imageNamed: "changeButton")
+                changeButton.setScale(1.0)
+                isChangeModeActive = false
+                firstSelectedCell = nil
+                NotificationCenter.default.post(name: NSNotification.Name("isSwap"), object: nil)
+            } else {
+                changeButton.texture = SKTexture(imageNamed: "changeButtonSelected")
+                changeButton.setScale(1.2)
+                isChangeModeActive = true
+                firstSelectedCell = nil
+                NotificationCenter.default.post(name: NSNotification.Name("isSwap"), object: nil)
             }
-            changeButton.setScale(1.2)
-            isChangeModeActive = true
-            firstSelectedCell = nil
             return
         }
         if isChangeModeActive {
@@ -175,13 +207,30 @@ class GameScene: SKScene {
                 } else {
                     let secondSelectedCell = (row, col)
                     print("Вторая клетка выбрана: \(secondSelectedCell)")
-                    swapCells(first: firstSelectedCell!, second: secondSelectedCell)
-                    isChangeModeActive = false // Отключаем режим замены
-                    firstSelectedCell = nil
-                    if LightningManager.shared.currentLightnings < 300 {
-                        changeButton.texture = SKTexture(imageNamed: "changeButtonNoMoney")
+                    if elements[firstSelectedCell!.0][firstSelectedCell!.1].isEmpty && elements[secondSelectedCell.0][secondSelectedCell.1].isEmpty{
+                        isChangeModeActive = false // Отключаем режим замены
+                        firstSelectedCell = nil
+                        changeButton.texture = SKTexture(imageNamed: "changeButton")
+                        changeButton.setScale(1.0)
+                        NotificationCenter.default.post(name: NSNotification.Name("isSwap"), object: nil)
+                    } else {
+                        swapCells(first: firstSelectedCell!, second: secondSelectedCell)
+                        isChangeModeActive = false // Отключаем режим замены
+                        firstSelectedCell = nil
+                        let _ = LightningManager.shared.subtractLightnings(300)
+                        if LightningManager.shared.currentLightnings < 300 {
+                            changeButton.texture = SKTexture(imageNamed: "changeButtonNoMoney")
+                        }
+                        if LightningManager.shared.currentLightnings < 500 {
+                            changeButton.texture = SKTexture(imageNamed: "removeButtonNoMoney")
+                        }
+                        if LightningManager.shared.currentLightnings > 300 {
+                            changeButton.texture = SKTexture(imageNamed: "changeButton")
+                        }
+                        changeButton.setScale(1.0)
+                        NotificationCenter.default.post(name: NSNotification.Name("isSwap"), object: nil)
                     }
-                    changeButton.setScale(1.0)
+                    
                 }
             }
             return
@@ -190,8 +239,15 @@ class GameScene: SKScene {
             if let (row, col) = gameRenderer.handleRemoveBoostTouch(location: location, gameBoard: gameBoard) {
                 clearCell(at: (row, col))
                 isRemoveModeActive = false // Отключаем режим удаления после очистки клетки
+                let _ = LightningManager.shared.subtractLightnings(500)
                 if LightningManager.shared.currentLightnings < 500 {
                     removeButton.texture = SKTexture(imageNamed: "removeButtonNoMoney")
+                }
+                if LightningManager.shared.currentLightnings < 300 {
+                    changeButton.texture = SKTexture(imageNamed: "changeButtonNoMoney")
+                }
+                if LightningManager.shared.currentLightnings > 300 {
+                    removeButton.texture = SKTexture(imageNamed: "removeButton")
                 }
                 removeButton.setScale(1.0)
             }
@@ -307,10 +363,9 @@ class GameScene: SKScene {
         self.isPaused = true
         timer?.invalidate()
         gameBoard.deselectAll()
-        LightningManager.shared.addLightnings(100)
-        BestResultManager.shared.updateBestResult(for: currentLevel, with: "\(90-remainingTime)")
+        BestResultManager.shared.updateBestResult(for: currentLevel, with: "\(timeOfLevel-remainingTime)")
         
-        if 90 - remainingTime < 30 {
+        if timeOfLevel - remainingTime < 30 {
             if AchievementsManager.shared.claiming(index: 6) {
                 NotificationCenter.default.post(name: NSNotification.Name("AchievementClaimed"), object: 6)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
@@ -357,58 +412,106 @@ class GameScene: SKScene {
             return // Останавливаем цикл, если достигнут лимит итераций
         }
 
-        let dispatchGroup = DispatchGroup() // Создаем группу для координации задач
+        let dispatchGroup = DispatchGroup()
 
         // Шаг 1: Проверяем матчи и удаляем элементы
-        gameLogic.checkAndRemoveMatches(on: gameBoard)
+        for i in 0...3  {
+            dispatchGroup.enter()
+            DispatchQueue.main.async {
+                self.gameLogic.checkAndRemoveMatches(on: self.gameBoard)
+                dispatchGroup.leave()
+            }
+        }
 
         // Шаг 2: Обновляем игровое поле
-        dispatchGroup.enter() // Входим в группу
-        DispatchQueue.main.async {
-            self.gameRenderer.updateGameBoard(on: self, gameBoard: self.gameBoard)
-            dispatchGroup.leave() // Выходим из группы после обновления
+        for _ in 0...2 {
+            dispatchGroup.notify(queue: .main) {
+                dispatchGroup.enter()
+                self.gameRenderer.updateGameBoard(on: self, gameBoard: self.gameBoard)
+                dispatchGroup.leave()
+            }
         }
 
         // Шаг 3: Преобразуем половинки в квадраты
-        dispatchGroup.notify(queue: .main) { // Ждем завершения предыдущего шага
-            dispatchGroup.enter()
-            if self.gameRenderer.changeHalfToSquare(scene: self, gameBoard: self.gameBoard) {
-//                dispatchGroup.enter() // Входим в группу
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                    self.gameRenderer.updateGameBoard(on: self, gameBoard: self.gameBoard)
-                    dispatchGroup.leave() // Выходим из группы после обновления
+        for _ in 0...2 {
+            dispatchGroup.notify(queue: .main) {
+                dispatchGroup.enter()
+                if self.gameRenderer.changeHalfToSquare(scene: self, gameBoard: self.gameBoard) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        self.gameRenderer.updateGameBoard(on: self, gameBoard: self.gameBoard)
+                        dispatchGroup.leave()
+                    }
+                } else {
+                    dispatchGroup.leave()
                 }
-            } else {
-                dispatchGroup.leave() // Если нет изменений, сразу выходим
             }
         }
 
         // Шаг 4: Преобразуем четвертинки в половинки
-        dispatchGroup.notify(queue: .main) { // Ждем завершения предыдущего шага
-            dispatchGroup.enter()
-            if self.gameRenderer.changeQuarterToHalf(gameBoard: self.gameBoard, gameLogic: self.gameLogic) {
-//                dispatchGroup.enter() // Входим в группу
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                    self.gameRenderer.updateGameBoard(on: self, gameBoard: self.gameBoard)
-                    dispatchGroup.leave() // Выходим из группы после обновления
+        for i in 0...2 {
+            dispatchGroup.notify(queue: .main) {
+                dispatchGroup.enter()
+                if self.gameRenderer.changeQuarterToHalf(gameBoard: self.gameBoard, gameLogic: self.gameLogic) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        self.gameRenderer.updateGameBoard(on: self, gameBoard: self.gameBoard)
+                        dispatchGroup.leave()
+                    }
+                } else {
+                    dispatchGroup.leave()
                 }
-            } else {
-                dispatchGroup.leave() // Если нет изменений, сразу выходим
             }
         }
 
         // Шаг 5: Проверяем, остались ли матчи
-        dispatchGroup.notify(queue: .main) { // Ждем завершения всех предыдущих шагов
+        for _ in 0...10 {
+            dispatchGroup.notify(queue: .main) {
+                if self.gameLogic.hasMatches(on: self.gameBoard) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                        self.startMatchCycle(row: row, col: col, iteration: iteration + 1)
+                    }
+                }
+            }
+        }
+        dispatchGroup.notify(queue: .main) {
             if self.gameLogic.hasMatches(on: self.gameBoard) {
-                // Если матчи есть, продолжаем цикл через небольшую задержку
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                     self.startMatchCycle(row: row, col: col, iteration: iteration + 1)
                 }
             } else {
                 // Если матчей больше нет, завершаем процесс
                 print("Матчинг завершен после \(iteration) итераций")
+
+                // Проверяем выполнение цели
+                if self.isGoalCompleted() {
+                    self.endGame()
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    if self.isGameOver() {
+                        self.endGameDueToTimeout()
+                    } else {
+                        print("Матчинг завершен после \(iteration) итераций")
+                    }
+                }
             }
         }
+    }
+    
+    private func isGameOver() -> Bool {
+        // Проверяем, все ли ячейки заполнены
+        for row in 0..<gameBoard.elements.count {
+            for col in 0..<gameBoard.elements[row].count {
+                if gameBoard.isCellAvailable[row][col] && gameBoard.elements[row][col].isEmpty {
+                    return false // Есть доступная пустая ячейка
+                }
+            }
+        }
+
+        // Проверяем, есть ли ещё матчи
+        if gameLogic.hasMatches(on: gameBoard) {
+            return false // Есть возможные матчи
+        }
+
+        return true // Нет пустых ячеек и матчей
     }
    
 }

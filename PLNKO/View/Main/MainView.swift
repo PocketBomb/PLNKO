@@ -4,12 +4,12 @@ import SwiftUI
 struct MainView: View {
     
     @StateObject var levelManager = LevelManager.shared
-    
+        
     let levels: [(x: CGFloat, y: CGFloat)] = [
-        (0.2, 0.97), (0.35, 0.95), (0.62, 0.93),
-        (0.85, 0.80), (0.8, 0.7), (0.6, 0.65),
-        (0.42, 0.65), (0.2, 0.65), (0.09, 0.57),
-        (0.16, 0.45), (0.34, 0.42), (0.38, 0.35)
+        (0.2, 0.97), (0.4, 0.95), (0.62, 0.93), //1-3
+        (0.85, (SizeConverter.isSmallScreen ? 0.8: 0.85)), ((SizeConverter.isSmallScreen ? 0.75 : 0.85), (SizeConverter.isSmallScreen ? 0.7: 0.77)), (0.6, (SizeConverter.isSmallScreen ? 0.65: 0.7)),//4-6
+        (0.42, (SizeConverter.isSmallScreen ? 0.66: 0.71)), (0.18, (SizeConverter.isSmallScreen ? 0.65: 0.7)), (0.09,(SizeConverter.isSmallScreen ?0.52 :0.57)),//7-9
+        (0.3,(SizeConverter.isSmallScreen ? 0.46 : 0.5)), (0.44, (SizeConverter.isSmallScreen ? 0.4 : 0.45)), (0.38,(SizeConverter.isSmallScreen ?0.28 : 0.35))//10-12
     ]
     
     @State private var isGamePresented = false
@@ -43,6 +43,7 @@ struct MainView: View {
                                             .resizable()
                                             .scaledToFit()
                                             .frame(width: 49, height: 58)
+                                            .padding(.bottom,  SizeConverter.isMediumScreen && !SizeConverter.isSmallScreen ? 17 : SizeConverter.isSmallScreen ? 3 : 0)
                                     }
                                     Spacer()
                                     //move --> RecordsView()
@@ -52,6 +53,7 @@ struct MainView: View {
                                             .resizable()
                                             .scaledToFit()
                                             .frame(width: 49, height: 41)
+                                            .padding(.bottom,  SizeConverter.isMediumScreen && !SizeConverter.isSmallScreen ? 17 : SizeConverter.isSmallScreen ? 3 : 0)
                                     }
                                     
                                 }
@@ -63,6 +65,7 @@ struct MainView: View {
                                     .scaledToFit()
                                     .frame(width: 140, alignment: .bottom)
                             }
+//                            .padding(.bottom, -40)
                             
                         }
                         .zIndex(10)
@@ -138,6 +141,7 @@ struct MainView: View {
         }
         .onAppear {
             levelManager.objectWillChange.send()
+            print(UIScreen.main.bounds.height)
         }
     }
 }

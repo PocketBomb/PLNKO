@@ -4,6 +4,7 @@ import SwiftUI
 struct PLNKOApp: App {
     
     @AppStorage("isFirst") private var isFirst: Bool = true
+//    @State private var isFirst: Bool = true
     @AppStorage("totalPlayTime") private var totalPlayTime: Int = 0
     
     @State private var startTime: Date?

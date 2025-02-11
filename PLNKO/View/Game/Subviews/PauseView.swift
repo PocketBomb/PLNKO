@@ -50,7 +50,7 @@ struct PauseView: View {
                 .padding(.bottom, -10)
 
             }
-            
+            .padding(.bottom, SizeConverter.isMediumScreen ? 130: 0)
         }
     }
 }

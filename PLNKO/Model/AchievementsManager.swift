@@ -12,7 +12,7 @@ class AchievementsManager: ObservableObject {
     static let shared = AchievementsManager()
     
     private let userDefaults = UserDefaults.standard
-    private let achievementsKey = "achievementsKey31e1123t3r3dhfg24f3"
+    private let achievementsKey = "achievementsKey31e112r23t3r3dhfg24f3"
     
     public var achievements: [Achievement] = []
     

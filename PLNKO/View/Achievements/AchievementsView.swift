@@ -33,7 +33,8 @@ struct AchievementsView: View {
                                 .scaledToFit()
                                 .frame(width: 49, height: 41)
                         }
-                        .position(x: 16 + 49/2, y: SizeConverter.isSmallScreen ? 85 : 95)
+//                        .position(x: 16 + 49/2, y: SizeConverter.isSmallScreen ? 85 : 95)
+                        .position(x: 16 + 49/2, y: SizeConverter.isMediumScreen ? 75: (SizeConverter.isSmallScreen ? 85 : 95))
                         
                         // Заголовок галереи
                         Image(Resources.Achievements.View.achievmentsLabel)

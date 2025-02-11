@@ -1,9 +1,12 @@
 
+
 import SwiftUI
 
-struct InfoView: View {
+struct FirstLounchInfoView: View {
     
-    @Environment(\.presentationMode) var presentationMode
+//    @Environment(\.presentationMode) var presentationMode
+    var onBack: () -> Void
+    var onPlay: () -> Void
     
     var infoImages = [
         Resources.Info.Images.info1,
@@ -39,7 +42,7 @@ struct InfoView: View {
                         
                         // Кнопка назад
                         Button(action: {
-                            presentationMode.wrappedValue.dismiss()
+                            onBack()
                         }) {
                             Image(Resources.GumGallery.Buttons.backButton)
                                 .resizable()
@@ -47,7 +50,15 @@ struct InfoView: View {
                                 .frame(width: 49, height: 41)
                         }
                         .position(x: 16 + 49/2, y: SizeConverter.isMediumScreen ? 75: (SizeConverter.isSmallScreen ? 85 : 95))
-//                        .padding(.bottom,  SizeConverter.isMediumScreen ? 15 : 0)
+                        Button(action: {
+                            onPlay()
+                        }) {
+                            Image("infoPlayButton")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 49, height: 41)
+                        }
+                        .position(x: UIScreen.main.bounds.width - (16 + 49/2), y: SizeConverter.isMediumScreen ? 75: (SizeConverter.isSmallScreen ? 85 : 95))
                         
                         // Заголовок галереи
                         Image(Resources.Info.View.infoLabel)
@@ -116,4 +127,5 @@ struct InfoView: View {
         .navigationBarHidden(true)
     }
 }
+
 

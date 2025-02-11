@@ -39,7 +39,7 @@ struct GumGalleryView: View {
                                 .scaledToFit()
                                 .frame(width: 49, height: 41)
                         }
-                        .position(x: 16 + 49/2, y: SizeConverter.isSmallScreen ? 85 : 95)
+                        .position(x: 16 + 49/2, y: SizeConverter.isMediumScreen ? 75: (SizeConverter.isSmallScreen ? 85 : 95))
                         
                         // Заголовок галереи
                         Image(Resources.GumGallery.Views.gumGalleryLabel)
@@ -129,6 +129,14 @@ struct GumGalleryView: View {
                                 .lineSpacing(1)
                                 .padding(.top, -50)
                                 .frame(height: 70)
+                        } else {
+                            Text("Chewing gum received")
+                                .font(.custom(Resources.Fonts.jomhuria, size: 27))
+                                .foregroundStyle(.white.opacity(0.6))
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(1)
+                                .padding(.top, -50)
+                                .frame(height: 70)
                         }
                         
                         
@@ -153,7 +161,8 @@ struct GumGalleryView: View {
                                 }
                             }
                         }
-                        .padding(.top, currentIndex+1 >= LevelManager.shared.maxUnlockedLevel ? -28 : 50 ) // Отступ сверху для коллекции
+//                        .padding(.top, currentIndex+1 >= LevelManager.shared.maxUnlockedLevel ? -28 : 50 ) // Отступ сверху для коллекции
+                        .padding(.top, -23 ) // Отступ сверху для коллекции
                         .padding(.horizontal, (geometry.size.width - (cellSize.width * 3 + horizontalSpacing * 2)) / 2)
                         Spacer(minLength: 150)
                     }

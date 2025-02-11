@@ -51,7 +51,7 @@ class LevelManager: ObservableObject {
          "elements": [
             [[("greenSquare", CGPoint(x: 0, y: 0))], [("purpleHorizontalHalf", CGPoint(x: 0, y: 19)), ("redHorizontalHalf", CGPoint(x: 0, y: -19))], [("greenVerticalHalf", CGPoint(x: -19, y: 0)),("orangeQuarter",CGPoint(x: 19, y: 19)), ("purpleQuarter",CGPoint(x: 19, y: -19))], []],
             [[("purpleVerticalHalf", CGPoint(x: -19, y: 0)),("orangeQuarter",CGPoint(x: 19, y: 19)), ("redQuarter",CGPoint(x: 19, y: -19))], [], [], []],
-            [[], [("orangeVerticalHalf", CGPoint(x: 19, y: 0)),("redQuarter",CGPoint(x: -19, y: 19)), ("greenQuarter",CGPoint(x: -19, y: -19))], [("greenQuarter",CGPoint(x: -19, y: 19)), ("orangeQuarter",CGPoint(x: 19, y: 19)), ("purpleQuarter",CGPoint(x: -19, y: -19)), ("redQuarter",CGPoint(x: 19, y: -19))], [("purpleQuarter",CGPoint(x: -19, y: 19)), ("redQuarter",CGPoint(x: 19, y: 19)), ("orangeQuarter",CGPoint(x: -19, y: -19)), ("greenQuarter",CGPoint(x: 19, y: -19))]],
+            [[], [("orangeVerticalHalf", CGPoint(x: 19, y: 0)),("redQuarter",CGPoint(x: -19, y: 19)), ("greenQuarter",CGPoint(x: -19, y: -19))], [("greenQuarter",CGPoint(x: -19, y: 19)), ("orangeQuarter",CGPoint(x: 19, y: 19)), ("purpleQuarter",CGPoint(x: -19, y: -19)), ("redQuarter",CGPoint(x: 19, y: -19))], []],
             [[], [], [("orangeQuarter",CGPoint(x: -19, y: 19)), ("greenQuarter",CGPoint(x: 19, y: 19)), ("purpleQuarter",CGPoint(x: -19, y: -19)), ("redQuarter",CGPoint(x: 19, y: -19))], [("redQuarter",CGPoint(x: -19, y: 19)), ("orangeQuarter",CGPoint(x: 19, y: 19)), ("purpleQuarter",CGPoint(x: -19, y: -19)), ("greenQuarter",CGPoint(x: 19, y: -19))]]
         ] as [[[(String, CGPoint)]]],
          "gameBoardCells": [

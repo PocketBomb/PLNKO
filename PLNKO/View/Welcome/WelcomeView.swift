@@ -30,38 +30,46 @@ struct WelcomeView: View {
                     Image(Resources.Welcome.Views.infoTopView)
                         .resizable()
                         .scaledToFit()
-                        .frame(maxWidth: UIScreen.main.bounds.width)
+                        .frame(minWidth: UIScreen.main.bounds.width)
                         .padding(.bottom, 0)
 
                     HStack {
                         if currentScreen != 1 {
                             Button(action: {
-                                currentScreen -= 1
+                                if currentScreen != 1 {
+                                    currentScreen -= 1
+                                }
+                            
                             }) {
                                 Image(Resources.Welcome.Buttons.infoLeftButton)
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 43, height: 41)
+                                    .padding(.bottom,  SizeConverter.isMediumScreen && !SizeConverter.isSmallScreen ? 27 : SizeConverter.isSmallScreen ? 10 : 10)
                             }
                         }
                         Spacer()
                         if currentScreen != welcomeImages.count {
                             Button(action: {
-                                currentScreen += 1
+                                if currentScreen != welcomeImages.count {
+                                    currentScreen += 1
+                                }
                             }) {
                                 Image(Resources.Welcome.Buttons.infoRightButton)
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 43, height: 41)
+                                    .padding(.bottom,  SizeConverter.isMediumScreen && !SizeConverter.isSmallScreen ? 27 : SizeConverter.isSmallScreen ? 10 : 10)
                             }
                         }
                     }
                     
                     .padding(.horizontal, 16) // горизонтальные отступы
-                    .frame(height: SizeConverter.isSmallScreen ? 107 : 113, alignment: .bottom)
+                    .frame(height: SizeConverter.isSmallScreen ? 107 : 125, alignment: .bottom)
+//                    .padding(.bottom, 50)
                 }
                 .zIndex(10) //for image don't
-                .padding(.top,SizeConverter.isSmallScreen ? 30 : 0)
+                .padding(.top, SizeConverter.isSmallScreen ? 45 : 0)
                 Image(welcomeImages[currentScreen-1])
                     .resizable()
                     .scaledToFit()
